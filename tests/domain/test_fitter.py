@@ -1,14 +1,14 @@
 import datetime as dt
 import pytest
 
-from src.volfitter.domain.datamodel import (
+from volfitter.domain.datamodel import (
     Option,
     OptionKind,
     ExerciseStyle,
     RawIVCurve,
     RawIVPoint,
 )
-from src.volfitter.domain.fitter import PassThroughSurfaceFitter
+from volfitter.domain.fitter import PassThroughSurfaceFitter
 
 _EXPIRY = dt.datetime(2020, 2, 3, 15, 0)
 

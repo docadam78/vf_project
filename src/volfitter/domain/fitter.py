@@ -8,7 +8,7 @@ implementations.
 import abc
 import numpy as np
 
-from src.volfitter.domain.datamodel import (
+from volfitter.domain.datamodel import (
     FinalIVSurface,
     RawIVSurface,
     RawIVCurve,

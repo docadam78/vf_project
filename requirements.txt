@@ -1,5 +1,6 @@
 dataclasses
 datetime
+numpy
 
 # tests
 pytest

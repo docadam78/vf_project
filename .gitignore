@@ -130,3 +130,6 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# volfitter output data
+data/output/

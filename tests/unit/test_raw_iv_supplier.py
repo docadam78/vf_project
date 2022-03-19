@@ -1,6 +1,7 @@
 import datetime as dt
 import pandas as pd
 
+from unittest.mock import Mock
 from volfitter.adapters.raw_iv_supplier import (
     OptionMetricsRawIVSupplier,
     AbstractDataFrameSupplier,
@@ -86,16 +87,14 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
         }
     )
 
-    victim = OptionMetricsRawIVSupplier(FakeDataFrameSupplier(df))
+    victim = OptionMetricsRawIVSupplier(_create_data_frame_supplier(df))
 
     raw_iv_surface = victim.get_raw_iv_surface()
 
     assert raw_iv_surface == expected_raw_iv_surface
 
 
-class FakeDataFrameSupplier(AbstractDataFrameSupplier):
-    def __init__(self, df: pd.DataFrame):
-        self.df = df
-
-    def get_dataframe(self) -> pd.DataFrame:
-        return self.df
+def _create_data_frame_supplier(data_frame: pd.DataFrame) -> Mock:
+    data_frame_supplier = Mock(spec_set=AbstractDataFrameSupplier)
+    data_frame_supplier.get_dataframe.return_value = data_frame
+    return data_frame_supplier

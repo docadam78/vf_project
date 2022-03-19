@@ -1,6 +1,7 @@
 dataclasses
 datetime
 numpy
+pandas
 
 # tests
 pytest

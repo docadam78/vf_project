@@ -6,7 +6,7 @@ import datetime as dt
 
 from dataclasses import dataclass
 from enum import auto, Enum
-from typing import Dict, Set
+from typing import Dict
 
 
 class OptionKind(Enum):
@@ -26,7 +26,7 @@ class Option:
     strike: float
     kind: OptionKind
     exercise_style: ExerciseStyle
-    contract_size: float
+    contract_size: int
 
 
 @dataclass(frozen=True)
@@ -39,12 +39,12 @@ class RawIVPoint:
 @dataclass(frozen=True)
 class RawIVCurve:
     expiry: dt.datetime
-    points: Set[RawIVPoint]
+    points: Dict[Option, RawIVPoint]
 
 
 @dataclass(frozen=True)
 class RawIVSurface:
-    curves: Set[RawIVCurve]
+    curves: Dict[dt.datetime, RawIVCurve]
 
 
 @dataclass(frozen=True)

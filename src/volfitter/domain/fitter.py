@@ -40,14 +40,15 @@ class AbstractPerExpirySurfaceFitter(AbstractSurfaceFitter):
 
     def fit_surface_model(self, raw_iv_surface: RawIVSurface) -> FinalIVSurface:
         """
-        Fits a vol surface model to a raw vol surface, fitting each expiry independently.
+        Fits a vol surface model to a raw vol surface, fitting each expiry
+        independently.
 
         :param raw_iv_surface: The raw vol surface.
         :return: The final, fitted vol surface.
         """
         final_iv_curves = {
-            raw_iv_curve.expiry: self._fit_curve_model(raw_iv_curve)
-            for raw_iv_curve in raw_iv_surface.curves
+            expiry: self._fit_curve_model(curve)
+            for (expiry, curve) in raw_iv_surface.curves.items()
         }
 
         return FinalIVSurface(final_iv_curves)
@@ -84,8 +85,8 @@ class PassThroughSurfaceFitter(AbstractPerExpirySurfaceFitter):
         best_bids_by_strike = {}
         best_asks_by_strike = {}
 
-        for raw_iv_point in raw_iv_curve.points:
-            strike = raw_iv_point.option.strike
+        for (option, raw_iv_point) in raw_iv_curve.points.items():
+            strike = option.strike
             if raw_iv_point.bid_vol > best_bids_by_strike.get(strike, -np.inf):
                 best_bids_by_strike[strike] = raw_iv_point.bid_vol
 

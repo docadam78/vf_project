@@ -9,9 +9,9 @@ from volfitter.adapters.raw_iv_supplier import (
     OptionMetricsRawIVSupplier,
     CSVDataFrameSupplier,
 )
+from volfitter.config.config import VolfitterConfig, VolfitterMode
 from volfitter.domain.fitter import PassThroughSurfaceFitter
 from volfitter.service_layer.service import VolfitterService
-
 
 def run():
     """
@@ -22,14 +22,14 @@ def run():
     logic within the service layer.
     """
 
-    input_data = "data/input/AMZN/amzn_option_data_jan2020.csv"
-    output_data_path = "data/output/AMZN"
-    output_file = output_data_path + "/final_surface.pickle"
+    volfitter_config = VolfitterConfig.from_environ()
+    if volfitter_config.volfitter_mode != VolfitterMode.SAMPLE_DATA:
+        raise ValueError(f"{volfitter_config.volfitter_mode} not currently supported.")
 
-    if not os.path.exists(output_data_path):
-        os.makedirs(output_data_path)
+    input_file = _format_input_data_path(volfitter_config)
+    output_file = _ensure_output_data_path(volfitter_config)
 
-    raw_iv_supplier = OptionMetricsRawIVSupplier(CSVDataFrameSupplier(input_data))
+    raw_iv_supplier = OptionMetricsRawIVSupplier(CSVDataFrameSupplier(input_file))
     fitter = PassThroughSurfaceFitter()
     final_iv_consumer = PickleFinalIVConsumer(output_file)
 
@@ -38,3 +38,22 @@ def run():
     service.fit_full_surface()
 
     print("Run successful.")
+
+
+def _format_input_data_path(volfitter_config: VolfitterConfig) -> str:
+    symbol = volfitter_config.symbol
+    sample_data_config = volfitter_config.sample_data_config
+
+    return f"{sample_data_config.input_data_path}/{symbol}/{sample_data_config.input_filename}"
+
+
+def _ensure_output_data_path(volfitter_config: VolfitterConfig) -> str:
+    symbol = volfitter_config.symbol
+    sample_data_config = volfitter_config.sample_data_config
+
+    output_data_path = f"{sample_data_config.output_data_path}/{symbol}"
+
+    if not os.path.exists(output_data_path):
+        os.makedirs(output_data_path)
+
+    return f"{output_data_path}/{sample_data_config.output_filename}"

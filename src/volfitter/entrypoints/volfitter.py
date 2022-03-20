@@ -2,8 +2,12 @@
 Module containing the main entrypoint to start and run the application.
 """
 
+import datetime as dt
 import logging
 import os
+import tzlocal
+
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 from volfitter.adapters.final_iv_consumer import PickleFinalIVConsumer
 from volfitter.adapters.raw_iv_supplier import (
@@ -47,9 +51,22 @@ def run():
 
     service = VolfitterService(raw_iv_supplier, fitter, final_iv_consumer)
 
-    service.fit_full_surface()
+    def volfitter_job():
+        _LOGGER.info("Starting run.")
+        service.fit_full_surface()
+        _LOGGER.info("Run completed.")
 
-    _LOGGER.info("Run successful.")
+    scheduler = BlockingScheduler(
+        job_defaults={"coalesce": True, "max_instances": 1},
+        timezone=str(tzlocal.get_localzone()),
+    )
+    scheduler.add_job(
+        volfitter_job,
+        "interval",
+        seconds=volfitter_config.fit_interval_s,
+        next_run_time=dt.datetime.now(),
+    )
+    scheduler.start()
 
 
 def _format_input_data_path(volfitter_config: VolfitterConfig) -> str:

@@ -26,6 +26,9 @@ class VolfitterConfig:
         help="Mode in which to run the volfitter.",
     )
     log_file = environ.var(default="logs/volfitter.log", help="The log file.")
+    fit_interval_s = environ.var(
+        default=10, converter=int, help="Fit interval in seconds."
+    )
 
     @environ.config
     class SampleDataConfig:

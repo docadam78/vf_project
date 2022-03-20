@@ -2,6 +2,7 @@
 Module containing the main entrypoint to start and run the application.
 """
 
+import logging
 import os
 
 from volfitter.adapters.final_iv_consumer import PickleFinalIVConsumer
@@ -14,6 +15,9 @@ from volfitter.domain.fitter import PassThroughSurfaceFitter
 from volfitter.service_layer.service import VolfitterService
 
 
+_LOGGER = logging.getLogger(__name__)
+
+
 def run():
     """
     Starts and runs the volfitter application.
@@ -24,6 +28,13 @@ def run():
     """
 
     volfitter_config = VolfitterConfig.from_environ()
+    logging.basicConfig(
+        filename=volfitter_config.log_file,
+        format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
+        filemode="w",
+        level=logging.INFO,
+    )
+
     if volfitter_config.volfitter_mode != VolfitterMode.SAMPLE_DATA:
         raise ValueError(f"{volfitter_config.volfitter_mode} not currently supported.")
 
@@ -38,7 +49,7 @@ def run():
 
     service.fit_full_surface()
 
-    print("Run successful.")
+    _LOGGER.info("Run successful.")
 
 
 def _format_input_data_path(volfitter_config: VolfitterConfig) -> str:

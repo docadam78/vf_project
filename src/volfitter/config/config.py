@@ -25,6 +25,7 @@ class VolfitterConfig:
         converter=VolfitterMode,
         help="Mode in which to run the volfitter.",
     )
+    log_file = environ.var(default="logs/volfitter.log", help="The log file.")
 
     @environ.config
     class SampleDataConfig:

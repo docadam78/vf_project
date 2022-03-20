@@ -13,6 +13,7 @@ from volfitter.config.config import VolfitterConfig, VolfitterMode
 from volfitter.domain.fitter import PassThroughSurfaceFitter
 from volfitter.service_layer.service import VolfitterService
 
+
 def run():
     """
     Starts and runs the volfitter application.

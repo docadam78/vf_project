@@ -28,8 +28,8 @@ def run():
     Starts and runs the volfitter application.
 
     This method instantiates concrete implementations of the system's dependencies and
-    wires them together to create the VolfitterService. It then calls the orchestration
-    logic within the service layer.
+    wires them together to create the VolfitterService. It then starts a timer which
+    repeatedly triggers the orchestration logic within the service layer.
     """
 
     volfitter_config = VolfitterConfig.from_environ()

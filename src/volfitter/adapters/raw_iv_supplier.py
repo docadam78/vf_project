@@ -6,6 +6,7 @@ Contains both the abstract interface and concrete implementation.
 
 import abc
 import datetime as dt
+import numpy as np
 
 from typing import List
 
@@ -114,6 +115,9 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
         responsibility of downstream consumers of the RawIVPoints to safely handle NaN
         data.
 
+        In particular, the bid vol is explicitly set to NaN if it would be nonpositive,
+        as this indicates a valid IV cannot be found.
+
         :param option_specs: A list of the option contract specs.
         :param bid_price: Best bid price.
         :param ask_price: Best offer price.
@@ -125,6 +129,9 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
         vol_width = price_width / vega
         bid_vol = mid_vol - 0.5 * vol_width
         ask_vol = mid_vol + 0.5 * vol_width
+
+        if bid_vol <= 0:
+            bid_vol = np.nan
 
         return RawIVPoint(self._create_option(*option_specs), bid_vol, ask_vol)
 

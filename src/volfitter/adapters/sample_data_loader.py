@@ -10,7 +10,7 @@ import datetime as dt
 import os
 import pandas as pd
 
-from volfitter.config.config import VolfitterConfig
+from volfitter.config import VolfitterConfig
 
 
 class AbstractDataFrameSupplier(abc.ABC):

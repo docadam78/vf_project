@@ -18,7 +18,7 @@ from volfitter.adapters.sample_data_loader import (
     CachingDataFrameSupplier,
     OptionDataFrameLoader,
 )
-from volfitter.config.config import VolfitterConfig, VolfitterMode
+from volfitter.config import VolfitterConfig, VolfitterMode
 from volfitter.domain.fitter import PassThroughSurfaceFitter
 from volfitter.service_layer.service import VolfitterService
 

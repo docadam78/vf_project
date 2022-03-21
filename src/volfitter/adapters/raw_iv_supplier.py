@@ -6,9 +6,10 @@ Contains both the abstract interface and concrete implementation.
 
 import abc
 import datetime as dt
-import pandas as pd
 
 from typing import List
+
+from volfitter.adapters.sample_data_loader import AbstractDataFrameSupplier
 from volfitter.domain.datamodel import (
     RawIVSurface,
     Option,
@@ -25,44 +26,14 @@ class AbstractRawIVSupplier(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_raw_iv_surface(self) -> RawIVSurface:
+    def get_raw_iv_surface(self, datetime: dt.datetime) -> RawIVSurface:
         """
         Returns a raw IV surface.
+
+        :param datetime: The datetime for which to return a raw IV surface.
         :return: RawIVSurface
         """
         raise NotImplementedError
-
-
-class AbstractDataFrameSupplier(abc.ABC):
-    """
-    Abstract base class for DataFrame suppliers.
-
-    Used internally to classes which read sample input data from Pandas DataFrames.
-    """
-
-    @abc.abstractmethod
-    def get_dataframe(self) -> pd.DataFrame:
-        """
-        Returns a DataFrame.
-        :return: The DataFrame.
-        """
-        raise NotImplementedError
-
-
-class CSVDataFrameSupplier(AbstractDataFrameSupplier):
-    """
-    Supplies a Pandas DataFrame from a CSV file on disc.
-    """
-
-    def __init__(self, filename: str):
-        self.filename = filename
-
-    def get_dataframe(self) -> pd.DataFrame:
-        """
-        Returns the DataFrame read in from the CSV file.
-        :return: The DataFrame.
-        """
-        return pd.read_csv(self.filename)
 
 
 class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
@@ -78,16 +49,18 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
     See papers/option_metrics_reference_manual.pdf.
     """
 
-    def __init__(self, data_frame_supplier: AbstractDataFrameSupplier):
-        self.data_frame_supplier = data_frame_supplier
+    def __init__(self, dataframe_supplier: AbstractDataFrameSupplier):
+        self.dataframe_supplier = dataframe_supplier
 
-    def get_raw_iv_surface(self) -> RawIVSurface:
+    def get_raw_iv_surface(self, datetime: dt.datetime) -> RawIVSurface:
         """
         Constructs a RawIVSurface from a DataFrame containing OptionMetrics data.
+
+        :param datetime: The datetime for which to return a raw IV surface.
         :return: RawIVSurface.
         """
 
-        df = self.data_frame_supplier.get_dataframe()
+        df = self.dataframe_supplier.get_dataframe(datetime)
 
         # Zipping columns together and iterating over the tuples is far faster than
         # iterating over the dataframe itself.
@@ -117,7 +90,7 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
 
             raw_iv_curves[expiry].points[raw_iv_point.option] = raw_iv_point
 
-        return RawIVSurface(raw_iv_curves)
+        return RawIVSurface(datetime, raw_iv_curves)
 
     def _create_raw_iv_point(
         self,

@@ -33,8 +33,9 @@ class VolfitterConfig:
     @environ.config
     class SampleDataConfig:
         input_data_path = environ.var(default="data/input", help="The input data path.")
-        input_filename = environ.var(
-            default="amzn_option_data_jan2020.csv", help="The input filename."
+        option_data_file_substring = environ.var(
+            default="option_data",
+            help="Option data will be loaded from all files in the input directory whose filenames contain this substring.",
         )
         output_data_path = environ.var(
             default="data/output", help="The output data path."

@@ -9,17 +9,18 @@ import tzlocal
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from volfitter.adapters.current_time_supplier import (
+    create_cycling_current_time_supplier,
+)
 from volfitter.adapters.final_iv_consumer import PickleFinalIVConsumer
-from volfitter.adapters.raw_iv_supplier import (
-    OptionMetricsRawIVSupplier,
-    CSVDataFrameSupplier,
+from volfitter.adapters.raw_iv_supplier import OptionMetricsRawIVSupplier
+from volfitter.adapters.sample_data_loader import (
+    CachingDataFrameSupplier,
+    OptionDataFrameLoader,
 )
 from volfitter.config.config import VolfitterConfig, VolfitterMode
 from volfitter.domain.fitter import PassThroughSurfaceFitter
 from volfitter.service_layer.service import VolfitterService
-
-
-_LOGGER = logging.getLogger(__name__)
 
 
 def run():
@@ -42,19 +43,29 @@ def run():
     if volfitter_config.volfitter_mode != VolfitterMode.SAMPLE_DATA:
         raise ValueError(f"{volfitter_config.volfitter_mode} not currently supported.")
 
-    input_file = _format_input_data_path(volfitter_config)
-    output_file = _ensure_output_data_path(volfitter_config)
+    option_dataframe_loader = OptionDataFrameLoader(
+        volfitter_config.symbol, volfitter_config.sample_data_config
+    )
+    caching_option_dataframe_supplier = CachingDataFrameSupplier(
+        option_dataframe_loader
+    )
 
-    raw_iv_supplier = OptionMetricsRawIVSupplier(CSVDataFrameSupplier(input_file))
+    current_time_supplier = create_cycling_current_time_supplier(
+        caching_option_dataframe_supplier
+    )
+    raw_iv_supplier = OptionMetricsRawIVSupplier(caching_option_dataframe_supplier)
+
     fitter = PassThroughSurfaceFitter()
+
+    output_file = _ensure_output_data_path(volfitter_config)
     final_iv_consumer = PickleFinalIVConsumer(output_file)
 
-    service = VolfitterService(raw_iv_supplier, fitter, final_iv_consumer)
+    service = VolfitterService(
+        current_time_supplier, raw_iv_supplier, fitter, final_iv_consumer
+    )
 
     def volfitter_job():
-        _LOGGER.info("Starting run.")
         service.fit_full_surface()
-        _LOGGER.info("Run completed.")
 
     scheduler = BlockingScheduler(
         job_defaults={"coalesce": True, "max_instances": 1},
@@ -67,13 +78,6 @@ def run():
         next_run_time=dt.datetime.now(),
     )
     scheduler.start()
-
-
-def _format_input_data_path(volfitter_config: VolfitterConfig) -> str:
-    symbol = volfitter_config.symbol
-    sample_data_config = volfitter_config.sample_data_config
-
-    return f"{sample_data_config.input_data_path}/{symbol}/{sample_data_config.input_filename}"
 
 
 def _ensure_output_data_path(volfitter_config: VolfitterConfig) -> str:

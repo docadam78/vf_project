@@ -17,6 +17,8 @@ from volfitter.domain.datamodel import (
 
 
 def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from_data_frame():
+    datetime = dt.datetime(2022, 1, 1, 12, 0)
+
     columns = [
         "symbol",
         "exdate",
@@ -56,6 +58,7 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
     )
 
     expected_raw_iv_surface = RawIVSurface(
+        datetime,
         {
             expected_expiry_1: RawIVCurve(
                 expected_expiry_1,
@@ -84,13 +87,15 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
                     )
                 },
             ),
-        }
+        },
     )
 
-    victim = OptionMetricsRawIVSupplier(_create_data_frame_supplier(df))
+    data_frame_supplier = _create_data_frame_supplier(df)
+    victim = OptionMetricsRawIVSupplier(data_frame_supplier)
 
-    raw_iv_surface = victim.get_raw_iv_surface()
+    raw_iv_surface = victim.get_raw_iv_surface(datetime)
 
+    data_frame_supplier.get_dataframe.assert_called_once_with(datetime)
     assert raw_iv_surface == expected_raw_iv_surface
 
 

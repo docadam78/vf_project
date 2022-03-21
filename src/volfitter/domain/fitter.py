@@ -51,7 +51,7 @@ class AbstractPerExpirySurfaceFitter(AbstractSurfaceFitter):
             for (expiry, curve) in raw_iv_surface.curves.items()
         }
 
-        return FinalIVSurface(final_iv_curves)
+        return FinalIVSurface(raw_iv_surface.datetime, final_iv_curves)
 
     @abc.abstractmethod
     def _fit_curve_model(self, raw_iv_curve: RawIVCurve) -> FinalIVCurve:

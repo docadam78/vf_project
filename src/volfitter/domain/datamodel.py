@@ -44,6 +44,7 @@ class RawIVCurve:
 
 @dataclass(frozen=True)
 class RawIVSurface:
+    datetime: dt.datetime
     curves: Dict[dt.datetime, RawIVCurve]
 
 
@@ -62,4 +63,5 @@ class FinalIVCurve:
 
 @dataclass(frozen=True)
 class FinalIVSurface:
+    datetime: dt.datetime
     curves: Dict[dt.datetime, FinalIVCurve]

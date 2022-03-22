@@ -19,12 +19,16 @@ from volfitter.adapters.final_iv_consumer import (
     AbstractFinalIVConsumer,
     PickleFinalIVConsumer,
 )
+from volfitter.adapters.forward_curve_supplier import (
+    AbstractForwardCurveSupplier,
+    OptionMetricsForwardCurveSupplier,
+)
 from volfitter.adapters.raw_iv_supplier import (
     AbstractRawIVSupplier,
     OptionMetricsRawIVSupplier,
 )
 from volfitter.adapters.sample_data_loader import (
-    OptionDataFrameLoader,
+    ConcatenatingDataFrameLoader,
     CachingDataFrameSupplier,
 )
 from volfitter.config import VolfitterConfig, VolfitterMode
@@ -49,19 +53,24 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
         (
             current_time_supplier,
             raw_iv_supplier,
+            forward_curve_supplier,
             final_iv_consumer,
         ) = _create_sample_data_adaptors(volfitter_config)
     else:
         raise ValueError(f"{volfitter_config.volfitter_mode} not currently supported.")
 
     return create_volfitter_service_from_adaptors(
-        current_time_supplier, raw_iv_supplier, final_iv_consumer
+        current_time_supplier,
+        raw_iv_supplier,
+        forward_curve_supplier,
+        final_iv_consumer,
     )
 
 
 def create_volfitter_service_from_adaptors(
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
+    forward_curve_supplier: AbstractForwardCurveSupplier,
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     """
@@ -69,6 +78,7 @@ def create_volfitter_service_from_adaptors(
 
     :param current_time_supplier: AbstractCurrentTimeSupplier.
     :param raw_iv_supplier: AbstractRawIVSupplier.
+    :param forward_curve_supplier: AbstractForwardCurveSupplier.
     :param final_iv_consumer: AbstractFinalIVConsumer.
     :return: VolfitterService.
     """
@@ -76,21 +86,38 @@ def create_volfitter_service_from_adaptors(
     fitter = PassThroughSurfaceFitter()
 
     return VolfitterService(
-        current_time_supplier, raw_iv_supplier, fitter, final_iv_consumer
+        current_time_supplier,
+        raw_iv_supplier,
+        forward_curve_supplier,
+        fitter,
+        final_iv_consumer,
     )
 
 
 def _create_sample_data_adaptors(
     volfitter_config: VolfitterConfig,
-) -> Tuple[AbstractCurrentTimeSupplier, AbstractRawIVSupplier, AbstractFinalIVConsumer]:
+) -> Tuple[
+    AbstractCurrentTimeSupplier,
+    AbstractRawIVSupplier,
+    AbstractForwardCurveSupplier,
+    AbstractFinalIVConsumer,
+]:
     """
     Creates sample data adaptors reading from and writing to disc.
     :param volfitter_config: VolfitterConfig.
-    :return: Tuple[AbstractCurrentTimeSupplier, AbstractRawIVSupplier, AbstractFinalIVConsumer]
+    :return: Tuple[
+        AbstractCurrentTimeSupplier,
+        AbstractRawIVSupplier,
+        AbstractForwardCurveSupplier,
+        AbstractFinalIVConsumer
+    ]
     """
+    sample_data_config = volfitter_config.sample_data_config
 
-    option_dataframe_loader = OptionDataFrameLoader(
-        volfitter_config.symbol, volfitter_config.sample_data_config
+    option_dataframe_loader = ConcatenatingDataFrameLoader(
+        volfitter_config.symbol,
+        sample_data_config.input_data_path,
+        sample_data_config.option_data_file_substring,
     )
     caching_option_dataframe_supplier = CachingDataFrameSupplier(
         option_dataframe_loader
@@ -101,10 +128,27 @@ def _create_sample_data_adaptors(
     )
     raw_iv_supplier = OptionMetricsRawIVSupplier(caching_option_dataframe_supplier)
 
+    forward_dataframe_loader = ConcatenatingDataFrameLoader(
+        volfitter_config.symbol,
+        sample_data_config.input_data_path,
+        sample_data_config.forward_data_file_substring,
+    )
+    caching_forward_dataframe_supplier = CachingDataFrameSupplier(
+        forward_dataframe_loader
+    )
+    forward_curve_supplier = OptionMetricsForwardCurveSupplier(
+        caching_forward_dataframe_supplier
+    )
+
     output_file = _ensure_output_data_path(volfitter_config)
     final_iv_consumer = PickleFinalIVConsumer(output_file)
 
-    return current_time_supplier, raw_iv_supplier, final_iv_consumer
+    return (
+        current_time_supplier,
+        raw_iv_supplier,
+        forward_curve_supplier,
+        final_iv_consumer,
+    )
 
 
 def _ensure_output_data_path(volfitter_config: VolfitterConfig) -> str:

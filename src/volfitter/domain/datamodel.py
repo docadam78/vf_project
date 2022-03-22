@@ -65,3 +65,9 @@ class FinalIVCurve:
 class FinalIVSurface:
     datetime: dt.datetime
     curves: Dict[dt.datetime, FinalIVCurve]
+
+
+@dataclass(frozen=True)
+class ForwardCurve:
+    datetime: dt.datetime
+    forward_prices: Dict[dt.datetime, float]

@@ -8,6 +8,7 @@ import logging
 
 from volfitter.adapters.current_time_supplier import AbstractCurrentTimeSupplier
 from volfitter.adapters.final_iv_consumer import AbstractFinalIVConsumer
+from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.domain.fitter import AbstractSurfaceFitter
 
@@ -24,11 +25,13 @@ class VolfitterService:
         self,
         current_time_supplier: AbstractCurrentTimeSupplier,
         raw_iv_supplier: AbstractRawIVSupplier,
+        forward_curve_supplier: AbstractForwardCurveSupplier,
         surface_fitter: AbstractSurfaceFitter,
         final_iv_consumer: AbstractFinalIVConsumer,
     ):
         self.current_time_supplier = current_time_supplier
         self.raw_iv_supplier = raw_iv_supplier
+        self.forward_curve_supplier = forward_curve_supplier
         self.surface_fitter = surface_fitter
         self.final_iv_consumer = final_iv_consumer
 
@@ -43,5 +46,7 @@ class VolfitterService:
         _LOGGER.info(f"Starting run for {current_time}")
 
         raw_iv_surface = self.raw_iv_supplier.get_raw_iv_surface(current_time)
+        forward_curve = self.forward_curve_supplier.get_forward_curve(current_time)
+
         final_iv_surface = self.surface_fitter.fit_surface_model(raw_iv_surface)
         self.final_iv_consumer.consume_final_iv_surface(final_iv_surface)

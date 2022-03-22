@@ -10,8 +10,6 @@ import datetime as dt
 import os
 import pandas as pd
 
-from volfitter.config import VolfitterConfig
-
 
 class AbstractDataFrameSupplier(abc.ABC):
     """
@@ -53,31 +51,31 @@ class AbstractDataFrameLoader(abc.ABC):
         raise NotImplementedError
 
 
-class OptionDataFrameLoader(AbstractDataFrameLoader):
+class ConcatenatingDataFrameLoader(AbstractDataFrameLoader):
     """
-    Loads options DataFrame from disc.
+    Loads DataFrame from disc by concatenating one or more CSV files.
     """
 
-    def __init__(
-        self, symbol: str, sample_data_config: VolfitterConfig.SampleDataConfig
-    ):
+    def __init__(self, symbol: str, input_data_path: str, data_file_substring: str):
         self.symbol = symbol
-        self.sample_data_config = sample_data_config
+        self.input_data_path = input_data_path
+        self.data_file_substring = data_file_substring
 
     def load_dataframe(self) -> pd.DataFrame:
         """
-        Loads a single DataFrame based on SampleDataConfig.
+        Loads a single DataFrame by concatenating one or more CSV files.
 
-        Concatenates a single DataFrame from all the relevant files specified in the
-        configuration.
+        Concatenates a single DataFrame from all the files in the directory which
+        contain the data file substring in their filename.
+
         :return: DataFrame.
         """
-        directory = f"{self.sample_data_config.input_data_path}/{self.symbol}"
+        directory = f"{self.input_data_path}/{self.symbol}"
         files = sorted(
             [
                 f"{directory}/{file}"
                 for file in os.listdir(directory)
-                if self.sample_data_config.option_data_file_substring in file
+                if self.data_file_substring in file
             ]
         )
         dfs = [pd.read_csv(file) for file in files]

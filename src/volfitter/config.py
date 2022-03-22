@@ -37,6 +37,10 @@ class VolfitterConfig:
             default="option_data",
             help="Option data will be loaded from all files in the input directory whose filenames contain this substring.",
         )
+        forward_data_file_substring = environ.var(
+            default="forward_prices",
+            help="Forward prices will be loaded from all files in the input directory whose filenames contain this substring.",
+        )
         output_data_path = environ.var(
             default="data/output", help="The output data path."
         )

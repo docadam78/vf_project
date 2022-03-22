@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 from volfitter.adapters.current_time_supplier import AbstractCurrentTimeSupplier
 from volfitter.adapters.final_iv_consumer import AbstractFinalIVConsumer
+from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.composition_root import create_volfitter_service_from_adaptors
 from volfitter.domain.datamodel import (
@@ -15,8 +16,16 @@ from volfitter.domain.datamodel import (
     FinalIVCurve,
     FinalIVPoint,
     FinalIVSurface,
+    ForwardCurve,
 )
 from volfitter.service_layer.service import VolfitterService
+
+
+@pytest.fixture
+def forward_curve(
+    current_time: dt.datetime, jan_expiry: dt.datetime, feb_expiry: dt.datetime
+) -> ForwardCurve:
+    return ForwardCurve(current_time, {jan_expiry: 100, feb_expiry: 101})
 
 
 @pytest.fixture
@@ -134,6 +143,13 @@ def raw_iv_supplier(raw_iv_surface: RawIVSurface) -> Mock:
 
 
 @pytest.fixture
+def forward_curve_supplier(forward_curve: ForwardCurve) -> Mock:
+    supplier = Mock(spec_set=AbstractForwardCurveSupplier)
+    supplier.get_forward_curve.return_value = forward_curve
+    return supplier
+
+
+@pytest.fixture
 def final_iv_consumer() -> Mock:
     return Mock(spec_set=AbstractFinalIVConsumer)
 
@@ -142,10 +158,14 @@ def final_iv_consumer() -> Mock:
 def volfitter_service(
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
+    forward_curve_supplier: AbstractForwardCurveSupplier,
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     return create_volfitter_service_from_adaptors(
-        current_time_supplier, raw_iv_supplier, final_iv_consumer
+        current_time_supplier,
+        raw_iv_supplier,
+        forward_curve_supplier,
+        final_iv_consumer,
     )
 
 

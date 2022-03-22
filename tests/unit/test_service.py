@@ -6,6 +6,7 @@ import pytest
 
 from volfitter.adapters.current_time_supplier import AbstractCurrentTimeSupplier
 from volfitter.adapters.final_iv_consumer import AbstractFinalIVConsumer
+from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.domain.datamodel import FinalIVSurface, RawIVSurface
 from volfitter.domain.fitter import AbstractSurfaceFitter
@@ -37,6 +38,11 @@ def raw_iv_supplier(raw_iv_surface: RawIVSurface) -> Mock:
 
 
 @pytest.fixture
+def forward_curve_supplier() -> Mock:
+    return Mock(spec_set=AbstractForwardCurveSupplier)
+
+
+@pytest.fixture
 def surface_fitter(final_iv_surface: FinalIVSurface) -> Mock:
     surface_fitter = Mock(spec_set=AbstractSurfaceFitter)
     surface_fitter.fit_surface_model.return_value = final_iv_surface
@@ -54,15 +60,21 @@ def test_volfitter_service_passes_raw_surface_through_fitter_to_consumer(
     final_iv_surface: FinalIVSurface,
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: Mock,
+    forward_curve_supplier: Mock,
     surface_fitter: Mock,
     final_iv_consumer: Mock,
 ):
     victim = VolfitterService(
-        current_time_supplier, raw_iv_supplier, surface_fitter, final_iv_consumer
+        current_time_supplier,
+        raw_iv_supplier,
+        forward_curve_supplier,
+        surface_fitter,
+        final_iv_consumer,
     )
 
     victim.fit_full_surface()
 
     raw_iv_supplier.get_raw_iv_surface.assert_called_once_with(current_time)
+    forward_curve_supplier.get_forward_curve.assert_called_once_with(current_time)
     surface_fitter.fit_surface_model.assert_called_once_with(raw_iv_surface)
     final_iv_consumer.consume_final_iv_surface.assert_called_once_with(final_iv_surface)

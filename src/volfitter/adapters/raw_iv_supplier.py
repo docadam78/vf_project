@@ -10,6 +10,7 @@ import numpy as np
 
 from typing import List
 
+from volfitter.adapters.option_metrics_helpers import create_expiry
 from volfitter.adapters.sample_data_loader import AbstractDataFrameSupplier
 from volfitter.domain.datamodel import (
     RawIVSurface,
@@ -164,7 +165,7 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
         """
 
         underlying_symbol = symbol.split()[0]
-        expiry = self._create_expiry(date, am_settlement)
+        expiry = create_expiry(date, am_settlement)
         strike = strike_price / 1000
 
         if cp_flag == "C":
@@ -189,24 +190,3 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
             exercise_style,
             contract_size,
         )
-
-    def _create_expiry(self, date: int, am_settlement: int) -> dt.datetime:
-        """
-        Creates an expiry from date and am_flag, which are in the OptionMetrics format.
-
-        Assumes Central timezone.
-
-        :param date: Date represented as an int in the format YYYYMMDD.
-        :param am_settlement: 1 if expiry is at market open, and 0 if expiry is at
-            market close.
-        :return: A datetime object representing the expiry in Central timezone.
-        """
-        expiry = dt.datetime.strptime(str(date), "%Y%m%d")
-        if am_settlement == 1:
-            expiry = expiry.replace(hour=8, minute=30)
-        elif am_settlement == 0:
-            expiry = expiry.replace(hour=15, minute=0)
-        else:
-            raise ValueError(f"Unsupported am_settlement: {am_settlement}")
-
-        return expiry

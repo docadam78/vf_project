@@ -71,3 +71,14 @@ class FinalIVSurface:
 class ForwardCurve:
     datetime: dt.datetime
     forward_prices: Dict[dt.datetime, float]
+
+
+@dataclass(frozen=True)
+class Pricing:
+    option: Option
+    moneyness: float
+    delta: float
+    gamma: float
+    vega: float
+    theta: float
+    time_to_expiry: float

@@ -23,6 +23,10 @@ from volfitter.adapters.forward_curve_supplier import (
     AbstractForwardCurveSupplier,
     OptionMetricsForwardCurveSupplier,
 )
+from volfitter.adapters.pricing_supplier import (
+    AbstractPricingSupplier,
+    OptionMetricsPricingSupplier,
+)
 from volfitter.adapters.raw_iv_supplier import (
     AbstractRawIVSupplier,
     OptionMetricsRawIVSupplier,
@@ -54,6 +58,7 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
             current_time_supplier,
             raw_iv_supplier,
             forward_curve_supplier,
+            pricing_supplier,
             final_iv_consumer,
         ) = _create_sample_data_adaptors(volfitter_config)
     else:
@@ -63,6 +68,7 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
         current_time_supplier,
         raw_iv_supplier,
         forward_curve_supplier,
+        pricing_supplier,
         final_iv_consumer,
     )
 
@@ -71,6 +77,7 @@ def create_volfitter_service_from_adaptors(
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
     forward_curve_supplier: AbstractForwardCurveSupplier,
+    pricing_supplier: AbstractPricingSupplier,
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     """
@@ -79,6 +86,7 @@ def create_volfitter_service_from_adaptors(
     :param current_time_supplier: AbstractCurrentTimeSupplier.
     :param raw_iv_supplier: AbstractRawIVSupplier.
     :param forward_curve_supplier: AbstractForwardCurveSupplier.
+    :param pricing_supplier: AbstractPricingSupplier.
     :param final_iv_consumer: AbstractFinalIVConsumer.
     :return: VolfitterService.
     """
@@ -89,6 +97,7 @@ def create_volfitter_service_from_adaptors(
         current_time_supplier,
         raw_iv_supplier,
         forward_curve_supplier,
+        pricing_supplier,
         fitter,
         final_iv_consumer,
     )
@@ -100,6 +109,7 @@ def _create_sample_data_adaptors(
     AbstractCurrentTimeSupplier,
     AbstractRawIVSupplier,
     AbstractForwardCurveSupplier,
+    AbstractPricingSupplier,
     AbstractFinalIVConsumer,
 ]:
     """
@@ -109,6 +119,7 @@ def _create_sample_data_adaptors(
         AbstractCurrentTimeSupplier,
         AbstractRawIVSupplier,
         AbstractForwardCurveSupplier,
+        AbstractPricingSupplier,
         AbstractFinalIVConsumer
     ]
     """
@@ -140,6 +151,8 @@ def _create_sample_data_adaptors(
         caching_forward_dataframe_supplier
     )
 
+    pricing_supplier = OptionMetricsPricingSupplier(caching_option_dataframe_supplier)
+
     output_file = _ensure_output_data_path(volfitter_config)
     final_iv_consumer = PickleFinalIVConsumer(output_file)
 
@@ -147,6 +160,7 @@ def _create_sample_data_adaptors(
         current_time_supplier,
         raw_iv_supplier,
         forward_curve_supplier,
+        pricing_supplier,
         final_iv_consumer,
     )
 

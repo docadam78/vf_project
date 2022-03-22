@@ -1,4 +1,6 @@
 import datetime as dt
+from typing import Dict
+
 import pytest
 
 from unittest.mock import Mock
@@ -6,6 +8,7 @@ from unittest.mock import Mock
 from volfitter.adapters.current_time_supplier import AbstractCurrentTimeSupplier
 from volfitter.adapters.final_iv_consumer import AbstractFinalIVConsumer
 from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSupplier
+from volfitter.adapters.pricing_supplier import AbstractPricingSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.composition_root import create_volfitter_service_from_adaptors
 from volfitter.domain.datamodel import (
@@ -17,6 +20,7 @@ from volfitter.domain.datamodel import (
     FinalIVPoint,
     FinalIVSurface,
     ForwardCurve,
+    Pricing,
 )
 from volfitter.service_layer.service import VolfitterService
 
@@ -26,6 +30,37 @@ def forward_curve(
     current_time: dt.datetime, jan_expiry: dt.datetime, feb_expiry: dt.datetime
 ) -> ForwardCurve:
     return ForwardCurve(current_time, {jan_expiry: 100, feb_expiry: 101})
+
+
+@pytest.fixture
+def pricing(
+    jan_90_call: Option,
+    jan_90_put: Option,
+    jan_100_call: Option,
+    jan_100_put: Option,
+    jan_110_call: Option,
+    jan_110_put: Option,
+    feb_90_call: Option,
+    feb_90_put: Option,
+    feb_100_call: Option,
+    feb_100_put: Option,
+    feb_110_call: Option,
+    feb_110_put: Option,
+) -> Dict[Option, Pricing]:
+    return {
+        jan_90_call: Pricing(jan_90_call, -0.105, 123, 123, 150, 123, 0.08),
+        jan_90_put: Pricing(jan_90_put, -0.105, 123, 123, 150, 123, 0.08),
+        jan_100_call: Pricing(jan_100_call, 0, 123, 123, 200, 123, 0.08),
+        jan_100_put: Pricing(jan_100_put, 0, 123, 123, 200, 123, 0.08),
+        jan_110_call: Pricing(jan_110_call, 0.95, 123, 123, 160, 123, 0.08),
+        jan_110_put: Pricing(jan_110_put, 0.95, 123, 123, 160, 123, 0.08),
+        feb_90_call: Pricing(feb_90_call, -0.115, 123, 123, 160, 123, 0.16),
+        feb_90_put: Pricing(feb_90_put, -0.115, 123, 123, 160, 123, 0.16),
+        feb_100_call: Pricing(feb_100_call, -0.001, 123, 123, 210, 123, 0.16),
+        feb_100_put: Pricing(feb_100_put, -0.001, 123, 123, 210, 123, 0.16),
+        feb_110_call: Pricing(feb_110_call, 0.085, 123, 123, 170, 123, 0.16),
+        feb_110_put: Pricing(feb_110_put, 0.085, 123, 123, 170, 123, 0.16),
+    }
 
 
 @pytest.fixture
@@ -150,6 +185,13 @@ def forward_curve_supplier(forward_curve: ForwardCurve) -> Mock:
 
 
 @pytest.fixture
+def pricing_supplier(pricing: Dict[Option, Pricing]) -> Mock:
+    supplier = Mock(spec_set=AbstractPricingSupplier)
+    supplier.get_pricing.return_value = pricing
+    return supplier
+
+
+@pytest.fixture
 def final_iv_consumer() -> Mock:
     return Mock(spec_set=AbstractFinalIVConsumer)
 
@@ -159,12 +201,14 @@ def volfitter_service(
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
     forward_curve_supplier: AbstractForwardCurveSupplier,
+    pricing_supplier: AbstractPricingSupplier,
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     return create_volfitter_service_from_adaptors(
         current_time_supplier,
         raw_iv_supplier,
         forward_curve_supplier,
+        pricing_supplier,
         final_iv_consumer,
     )
 

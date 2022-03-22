@@ -37,6 +37,7 @@ from volfitter.adapters.sample_data_loader import (
 )
 from volfitter.config import VolfitterConfig, VolfitterMode
 from volfitter.domain.fitter import PassThroughSurfaceFitter
+from volfitter.domain.raw_iv_filtering import CompositeRawIVFilter, InTheMoneyFilter
 from volfitter.service_layer.service import VolfitterService
 
 
@@ -91,6 +92,7 @@ def create_volfitter_service_from_adaptors(
     :return: VolfitterService.
     """
 
+    raw_iv_filter = CompositeRawIVFilter([InTheMoneyFilter()])
     fitter = PassThroughSurfaceFitter()
 
     return VolfitterService(
@@ -98,6 +100,7 @@ def create_volfitter_service_from_adaptors(
         raw_iv_supplier,
         forward_curve_supplier,
         pricing_supplier,
+        raw_iv_filter,
         fitter,
         final_iv_consumer,
     )

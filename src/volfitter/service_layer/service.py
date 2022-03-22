@@ -15,7 +15,7 @@ from volfitter.adapters.pricing_supplier import AbstractPricingSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.domain.datamodel import RawIVSurface, Option
 from volfitter.domain.fitter import AbstractSurfaceFitter
-
+from volfitter.domain.raw_iv_filtering import AbstractRawIVFilter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ class VolfitterService:
         raw_iv_supplier: AbstractRawIVSupplier,
         forward_curve_supplier: AbstractForwardCurveSupplier,
         pricing_supplier: AbstractPricingSupplier,
+        raw_iv_filter: AbstractRawIVFilter,
         surface_fitter: AbstractSurfaceFitter,
         final_iv_consumer: AbstractFinalIVConsumer,
     ):
@@ -38,6 +39,7 @@ class VolfitterService:
         self.raw_iv_supplier = raw_iv_supplier
         self.forward_curve_supplier = forward_curve_supplier
         self.pricing_supplier = pricing_supplier
+        self.raw_iv_filter = raw_iv_filter
         self.surface_fitter = surface_fitter
         self.final_iv_consumer = final_iv_consumer
 
@@ -62,7 +64,12 @@ class VolfitterService:
             current_time, forward_curve, options
         )
 
-        final_iv_surface = self.surface_fitter.fit_surface_model(raw_iv_surface)
+        filtered_raw_iv_surface = self.raw_iv_filter.filter_raw_ivs(
+            raw_iv_surface, pricing
+        )
+        final_iv_surface = self.surface_fitter.fit_surface_model(
+            filtered_raw_iv_surface
+        )
 
         self.final_iv_consumer.consume_final_iv_surface(final_iv_surface)
 

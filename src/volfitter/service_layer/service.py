@@ -4,6 +4,7 @@ Module containing the service layer orchestration logic.
 The logic in this module defines the use cases of the system.
 """
 
+import datetime as dt
 import logging
 from typing import Collection
 
@@ -51,9 +52,12 @@ class VolfitterService:
         _LOGGER.info(f"Starting run for {current_time}")
 
         raw_iv_surface = self.raw_iv_supplier.get_raw_iv_surface(current_time)
+        expiries = self._get_expiries(raw_iv_surface)
         options = self._get_options(raw_iv_surface)
 
-        forward_curve = self.forward_curve_supplier.get_forward_curve(current_time)
+        forward_curve = self.forward_curve_supplier.get_forward_curve(
+            current_time, expiries
+        )
         pricing = self.pricing_supplier.get_pricing(
             current_time, forward_curve, options
         )
@@ -61,6 +65,9 @@ class VolfitterService:
         final_iv_surface = self.surface_fitter.fit_surface_model(raw_iv_surface)
 
         self.final_iv_consumer.consume_final_iv_surface(final_iv_surface)
+
+    def _get_expiries(self, raw_iv_surface: RawIVSurface) -> Collection[dt.datetime]:
+        return set(raw_iv_surface.curves.keys())
 
     def _get_options(self, raw_iv_surface: RawIVSurface) -> Collection[Option]:
         return set().union(

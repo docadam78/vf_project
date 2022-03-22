@@ -26,7 +26,6 @@ def test_option_metrics_forward_curve_supplier_correctly_constructs_forward_curv
     df = pd.DataFrame.from_records(data, columns=columns)
 
     expected_expiry_1 = dt.datetime(2020, 1, 1, 15, 0)
-    expected_expiry_2 = dt.datetime(2020, 2, 1, 15, 0)
     expected_expiry_3 = dt.datetime(2020, 3, 1, 8, 30)
     expected_expiry_4 = dt.datetime(2020, 3, 1, 15, 0)
 
@@ -34,7 +33,6 @@ def test_option_metrics_forward_curve_supplier_correctly_constructs_forward_curv
         datetime,
         {
             expected_expiry_1: 100,
-            expected_expiry_2: 105,
             expected_expiry_3: 109,
             expected_expiry_4: 110,
         },
@@ -43,7 +41,9 @@ def test_option_metrics_forward_curve_supplier_correctly_constructs_forward_curv
     data_frame_supplier = _create_data_frame_supplier(df)
     victim = OptionMetricsForwardCurveSupplier(data_frame_supplier)
 
-    forward_curve = victim.get_forward_curve(datetime)
+    forward_curve = victim.get_forward_curve(
+        datetime, [expected_expiry_1, expected_expiry_3, expected_expiry_4]
+    )
 
     data_frame_supplier.get_dataframe.assert_called_once_with(datetime)
     assert forward_curve == expected_forward_curve

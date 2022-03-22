@@ -91,7 +91,9 @@ def test_volfitter_service_passes_raw_surface_through_fitter_to_consumer(
     victim.fit_full_surface()
 
     raw_iv_supplier.get_raw_iv_surface.assert_called_once_with(current_time)
-    forward_curve_supplier.get_forward_curve.assert_called_once_with(current_time)
+    forward_curve_supplier.get_forward_curve.assert_called_once_with(
+        current_time, set()
+    )
     pricing_supplier.get_pricing.assert_called_once_with(
         current_time, forward_curve, set()
     )

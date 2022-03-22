@@ -3,6 +3,10 @@ Module containing filters to discard raw IV markets that we do not want to fit.
 """
 
 import abc
+import datetime as dt
+import logging
+import numpy as np
+
 from typing import List, Dict
 
 from volfitter.domain.datamodel import (
@@ -13,6 +17,8 @@ from volfitter.domain.datamodel import (
     RawIVPoint,
     OptionKind,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class AbstractRawIVFilter(abc.ABC):
@@ -64,18 +70,30 @@ class AbstractPerExpiryRawIVFilter(AbstractRawIVFilter):
         :return: Filtered RawIVCurve.
         """
 
-        points = {
+        retained_points = {
             option: point
             for (option, point) in raw_iv_curve.points.items()
             if not self._discard_point(point, pricing)
         }
-        return RawIVCurve(raw_iv_curve.expiry, points)
+
+        self._log_if_necessary(
+            raw_iv_curve.expiry,
+            len(raw_iv_curve.points) - len(retained_points),
+            len(raw_iv_curve.points),
+        )
+
+        return RawIVCurve(raw_iv_curve.expiry, retained_points)
 
     @abc.abstractmethod
     def _discard_point(
         self, raw_iv_point: RawIVPoint, pricing: Dict[Option, Pricing]
     ) -> bool:
         raise NotImplementedError
+
+    def _log_if_necessary(
+        self, expiry: dt.datetime, num_discarded_points: int, num_original_points: int
+    ) -> None:
+        pass
 
 
 class CompositeRawIVFilter(AbstractRawIVFilter):
@@ -117,3 +135,23 @@ class InTheMoneyFilter(AbstractPerExpiryRawIVFilter):
         return (kind == OptionKind.CALL and moneyness < 0) or (
             kind == OptionKind.PUT and moneyness > 0
         )
+
+
+class NonTwoSidedMarketFilter(AbstractPerExpiryRawIVFilter):
+    """
+    Discards empty and one-sided markets, i.e., markets whose bid vol or ask vol is NaN.
+    """
+
+    def _discard_point(
+        self, raw_iv_point: RawIVPoint, pricing: Dict[Option, Pricing]
+    ) -> bool:
+        return np.isnan(raw_iv_point.bid_vol) or np.isnan(raw_iv_point.ask_vol)
+
+    def _log_if_necessary(
+        self, expiry: dt.datetime, num_discarded_points: int, num_original_points: int
+    ) -> None:
+        if num_discarded_points > 0:
+            _LOGGER.info(
+                f"Discarding {num_discarded_points} of {num_original_points} strikes "
+                f"in expiry {expiry} because they were empty or one-sided."
+            )

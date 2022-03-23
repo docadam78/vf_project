@@ -42,6 +42,7 @@ from volfitter.domain.raw_iv_filtering import (
     InTheMoneyFilter,
     NonTwoSidedMarketFilter,
     InsufficientValidStrikesFilter,
+    StaleLastTradeDateFilter,
 )
 from volfitter.service_layer.service import VolfitterService
 
@@ -103,6 +104,7 @@ def create_volfitter_service_from_adaptors(
         [
             InTheMoneyFilter(),
             NonTwoSidedMarketFilter(),
+            StaleLastTradeDateFilter(volfitter_config.raw_iv_filtering_config),
             InsufficientValidStrikesFilter(volfitter_config.raw_iv_filtering_config),
         ]
     )

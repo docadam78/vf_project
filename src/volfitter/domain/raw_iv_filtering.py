@@ -7,6 +7,7 @@ import datetime as dt
 import logging
 import math
 import numpy as np
+import pandas_market_calendars as mcal
 
 from typing import List, Dict
 
@@ -59,16 +60,20 @@ class AbstractPerExpiryRawIVFilter(AbstractRawIVFilter):
         """
 
         filtered_curves = {
-            expiry: self._filter_expiry(curve, pricing)
+            expiry: self._filter_expiry(raw_iv_surface.datetime, curve, pricing)
             for (expiry, curve) in raw_iv_surface.curves.items()
         }
         return RawIVSurface(raw_iv_surface.datetime, filtered_curves)
 
     def _filter_expiry(
-        self, raw_iv_curve: RawIVCurve, pricing: Dict[Option, Pricing]
+        self,
+        current_time: dt.datetime,
+        raw_iv_curve: RawIVCurve,
+        pricing: Dict[Option, Pricing],
     ) -> RawIVCurve:
         """
         Filters a single raw IV curve.
+        :param current_time: The current time.
         :param raw_iv_surface: RawIVCurve.
         :param pricing: Dict of Pricings.
         :return: Filtered RawIVCurve.
@@ -77,7 +82,7 @@ class AbstractPerExpiryRawIVFilter(AbstractRawIVFilter):
         retained_points = {
             option: point
             for (option, point) in raw_iv_curve.points.items()
-            if not self._discard_point(point, pricing)
+            if not self._discard_point(current_time, point, pricing)
         }
 
         self._log_if_necessary(
@@ -90,7 +95,10 @@ class AbstractPerExpiryRawIVFilter(AbstractRawIVFilter):
 
     @abc.abstractmethod
     def _discard_point(
-        self, raw_iv_point: RawIVPoint, pricing: Dict[Option, Pricing]
+        self,
+        current_time: dt.datetime,
+        raw_iv_point: RawIVPoint,
+        pricing: Dict[Option, Pricing],
     ) -> bool:
         raise NotImplementedError
 
@@ -131,7 +139,10 @@ class InTheMoneyFilter(AbstractPerExpiryRawIVFilter):
     """
 
     def _discard_point(
-        self, raw_iv_point: RawIVPoint, pricing: Dict[Option, Pricing]
+        self,
+        current_time: dt.datetime,
+        raw_iv_point: RawIVPoint,
+        pricing: Dict[Option, Pricing],
     ) -> bool:
         kind = raw_iv_point.option.kind
         moneyness = pricing[raw_iv_point.option].moneyness
@@ -147,7 +158,10 @@ class NonTwoSidedMarketFilter(AbstractPerExpiryRawIVFilter):
     """
 
     def _discard_point(
-        self, raw_iv_point: RawIVPoint, pricing: Dict[Option, Pricing]
+        self,
+        current_time: dt.datetime,
+        raw_iv_point: RawIVPoint,
+        pricing: Dict[Option, Pricing],
     ) -> bool:
         return np.isnan(raw_iv_point.bid_vol) or np.isnan(raw_iv_point.ask_vol)
 
@@ -158,6 +172,40 @@ class NonTwoSidedMarketFilter(AbstractPerExpiryRawIVFilter):
             _LOGGER.info(
                 f"Discarding {num_discarded_points} of {num_original_points} strikes "
                 f"in expiry {expiry} because they were empty or one-sided."
+            )
+
+
+class StaleLastTradeDateFilter(AbstractPerExpiryRawIVFilter):
+    """
+    Discards markets whose last trade date is too old.
+
+    The max allowable last trade age is specified in configuration. We count business
+    days using the NYSE holiday calendar.
+    """
+
+    def __init__(self, raw_iv_filtering_config: VolfitterConfig.RawIVFilteringConfig):
+        self.raw_iv_filtering_config = raw_iv_filtering_config
+        self.holidays = mcal.get_calendar("NYSE").holidays().holidays
+
+    def _discard_point(
+        self,
+        current_time: dt.datetime,
+        raw_iv_point: RawIVPoint,
+        pricing: Dict[Option, Pricing],
+    ) -> bool:
+        last_trade_age = np.busday_count(
+            raw_iv_point.last_trade_date, current_time.date(), holidays=self.holidays
+        )
+        return last_trade_age > self.raw_iv_filtering_config.max_last_trade_age_days
+
+    def _log_if_necessary(
+        self, expiry: dt.datetime, num_discarded_points: int, num_original_points: int
+    ) -> None:
+        if num_discarded_points > 0:
+            _LOGGER.info(
+                f"Discarding {num_discarded_points} of {num_original_points} strikes "
+                f"in expiry {expiry} because their last trade date was older than "
+                f"{self.raw_iv_filtering_config.max_last_trade_age_days} days."
             )
 
 
@@ -177,7 +225,10 @@ class InsufficientValidStrikesFilter(AbstractPerExpiryRawIVFilter):
         self.raw_iv_filtering_config = raw_iv_filtering_config
 
     def _filter_expiry(
-        self, raw_iv_curve: RawIVCurve, pricing: Dict[Option, Pricing]
+        self,
+        current_time: dt.datetime,
+        raw_iv_curve: RawIVCurve,
+        pricing: Dict[Option, Pricing],
     ) -> RawIVCurve:
         """
         Marks a RawIVCurve as FAILed if it does not have enough valid strikes.
@@ -185,6 +236,7 @@ class InsufficientValidStrikesFilter(AbstractPerExpiryRawIVFilter):
         If the RawIVCurve is already FAILed, that failure status message is propagated
         rather than overwritten.
 
+        :param current_time: The current time.
         :param raw_iv_surface: RawIVCurve.
         :param pricing: Dict of Pricings.
         :return: RawIVCurve, potentially with its status set to FAIL.
@@ -223,6 +275,9 @@ class InsufficientValidStrikesFilter(AbstractPerExpiryRawIVFilter):
             return raw_iv_curve
 
     def _discard_point(
-        self, raw_iv_point: RawIVPoint, pricing: Dict[Option, Pricing]
+        self,
+        current_time: dt.datetime,
+        raw_iv_point: RawIVPoint,
+        pricing: Dict[Option, Pricing],
     ) -> bool:
         raise NotImplementedError

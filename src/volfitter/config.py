@@ -55,6 +55,11 @@ class VolfitterConfig:
             converter=float,
             help="An expiry needs at least this fraction of its strikes to have valid markets in order to be fit.",
         )
+        max_last_trade_age_days = environ.var(
+            default=3,
+            converter=int,
+            help="Filter out strikes which have not traded in more than this many business days.",
+        )
 
     sample_data_config = environ.group(SampleDataConfig, optional=True)
     raw_iv_filtering_config = environ.group(RawIVFilteringConfig)

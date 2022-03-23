@@ -10,6 +10,11 @@ def current_time() -> dt.datetime:
 
 
 @pytest.fixture
+def current_date(current_time: dt.datetime) -> dt.date:
+    return current_time.date()
+
+
+@pytest.fixture
 def jan_expiry() -> dt.datetime:
     return dt.datetime(2022, 1, 21, 15, 0)
 

@@ -13,6 +13,7 @@ from volfitter.domain.fitter import PassThroughSurfaceFitter
 
 
 def test_pass_through_fitter_returns_midpoint_vol_per_strike(
+    current_date: dt.date,
     jan_expiry: dt.datetime,
     jan_100_call: Option,
     jan_100_put: Option,
@@ -23,10 +24,10 @@ def test_pass_through_fitter_returns_midpoint_vol_per_strike(
         jan_expiry,
         ok(),
         {
-            jan_100_call: RawIVPoint(jan_100_call, 1.1, 1.9),
-            jan_100_put: RawIVPoint(jan_100_put, 1.0, 2.0),
-            jan_110_call: RawIVPoint(jan_110_call, 1.1, 1.9),
-            jan_110_put: RawIVPoint(jan_110_put, 1.2, 2.2),
+            jan_100_call: RawIVPoint(jan_100_call, current_date, 1.1, 1.9),
+            jan_100_put: RawIVPoint(jan_100_put, current_date, 1.0, 2.0),
+            jan_110_call: RawIVPoint(jan_110_call, current_date, 1.1, 1.9),
+            jan_110_put: RawIVPoint(jan_110_put, current_date, 1.2, 2.2),
         },
     )
     victim = PassThroughSurfaceFitter()
@@ -38,14 +39,14 @@ def test_pass_through_fitter_returns_midpoint_vol_per_strike(
 
 
 def test_pass_through_fitter_propagates_input_curve_failure(
-    jan_expiry: dt.datetime, jan_100_call: Option
+    current_date: dt.date, jan_expiry: dt.datetime, jan_100_call: Option
 ):
     message = "'Failure is a part of the process.' -- Michelle Obama"
     raw_iv_curve = RawIVCurve(
         jan_expiry,
         fail(message),
         {
-            jan_100_call: RawIVPoint(jan_100_call, 1, 2),
+            jan_100_call: RawIVPoint(jan_100_call, current_date, 1, 2),
         },
     )
     victim = PassThroughSurfaceFitter()

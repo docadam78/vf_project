@@ -35,7 +35,9 @@ def raw_iv_surface(
         current_time,
         {
             jan_expiry: RawIVCurve(
-                jan_expiry, ok(), {jan_100_call: RawIVPoint(jan_100_call, 1, 2)}
+                jan_expiry,
+                ok(),
+                {jan_100_call: RawIVPoint(jan_100_call, current_time.date(), 1, 2)},
             )
         },
     )
@@ -49,7 +51,9 @@ def filtered_raw_iv_surface(
         current_time,
         {
             jan_expiry: RawIVCurve(
-                jan_expiry, ok(), {jan_100_call: RawIVPoint(jan_100_call, 3, 4)}
+                jan_expiry,
+                ok(),
+                {jan_100_call: RawIVPoint(jan_100_call, current_time.date(), 3, 4)},
             )
         },
     )

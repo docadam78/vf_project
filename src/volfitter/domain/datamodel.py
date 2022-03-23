@@ -44,6 +44,7 @@ class Status:
 @dataclass(frozen=True)
 class RawIVPoint:
     option: Option
+    last_trade_date: dt.date
     bid_vol: float
     ask_vol: float
 

@@ -1,4 +1,5 @@
 import datetime as dt
+import numpy as np
 import pandas as pd
 
 from unittest.mock import Mock
@@ -28,16 +29,56 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
         "cp_flag",
         "exercise_style",
         "contract_size",
+        "last_date",
         "best_bid",
         "best_offer",
         "impl_volatility",
         "vega",
     ]
     data = [
-        ("AMZN foo", 20200101, 0, 100000, "C", "A", 100, 9.5, 10.5, 0.16, 50),
-        ("AMZN bar", 20200101, 0, 100000, "P", "A", 100, 9.0, 10.0, 0.17, 60),
-        ("AMZN baz", 20200101, 1, 200000, "C", "A", 100, 10.5, 11.5, 0.18, 70),
-        ("AMZN qux", 20200201, 0, 300000, "C", "E", 100, 8.5, 9.5, 0.19, 80),
+        (
+            "AMZN foo",
+            20200101,
+            0,
+            100000,
+            "C",
+            "A",
+            100,
+            20200102.0,
+            9.5,
+            10.5,
+            0.16,
+            50,
+        ),
+        (
+            "AMZN bar",
+            20200101,
+            0,
+            100000,
+            "P",
+            "A",
+            100,
+            20200103.0,
+            9.0,
+            10.0,
+            0.17,
+            60,
+        ),
+        (
+            "AMZN baz",
+            20200101,
+            1,
+            200000,
+            "C",
+            "A",
+            100,
+            20200104.0,
+            10.5,
+            11.5,
+            0.18,
+            70,
+        ),
+        ("AMZN qux", 20200201, 0, 300000, "C", "E", 100, np.nan, 8.5, 9.5, 0.19, 80),
     ]
     df = pd.DataFrame.from_records(data, columns=columns)
 
@@ -66,10 +107,16 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
                 ok(),
                 {
                     expected_option_1: RawIVPoint(
-                        expected_option_1, 0.16 - 0.5 * 1 / 50, 0.16 + 0.5 * 1 / 50
+                        expected_option_1,
+                        dt.date(2020, 1, 2),
+                        0.16 - 0.5 * 1 / 50,
+                        0.16 + 0.5 * 1 / 50,
                     ),
                     expected_option_2: RawIVPoint(
-                        expected_option_2, 0.17 - 0.5 * 1 / 60, 0.17 + 0.5 * 1 / 60
+                        expected_option_2,
+                        dt.date(2020, 1, 3),
+                        0.17 - 0.5 * 1 / 60,
+                        0.17 + 0.5 * 1 / 60,
                     ),
                 },
             ),
@@ -78,7 +125,10 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
                 ok(),
                 {
                     expected_option_3: RawIVPoint(
-                        expected_option_3, 0.18 - 0.5 * 1 / 70, 0.18 + 0.5 * 1 / 70
+                        expected_option_3,
+                        dt.date(2020, 1, 4),
+                        0.18 - 0.5 * 1 / 70,
+                        0.18 + 0.5 * 1 / 70,
                     )
                 },
             ),
@@ -87,7 +137,10 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
                 ok(),
                 {
                     expected_option_4: RawIVPoint(
-                        expected_option_4, 0.19 - 0.5 * 1 / 80, 0.19 + 0.5 * 1 / 80
+                        expected_option_4,
+                        dt.date(1970, 1, 1),
+                        0.19 - 0.5 * 1 / 80,
+                        0.19 + 0.5 * 1 / 80,
                     )
                 },
             ),

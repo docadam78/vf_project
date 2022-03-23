@@ -75,6 +75,7 @@ def pricing(
 
 @pytest.fixture
 def jan_raw_iv_curve(
+    current_date: dt.date,
     jan_expiry: dt.datetime,
     jan_90_call: Option,
     jan_90_put: Option,
@@ -87,12 +88,12 @@ def jan_raw_iv_curve(
         jan_expiry,
         ok(),
         {
-            jan_90_call: RawIVPoint(jan_90_call, 0.14, 0.16),
-            jan_90_put: RawIVPoint(jan_90_put, 0.145, 0.155),
-            jan_100_call: RawIVPoint(jan_100_call, 0.129, 0.131),
-            jan_100_put: RawIVPoint(jan_100_put, 0.129, 0.131),
-            jan_110_call: RawIVPoint(jan_110_call, 0.13, 0.14),
-            jan_110_put: RawIVPoint(jan_110_put, 0.125, 0.145),
+            jan_90_call: RawIVPoint(jan_90_call, current_date, 0.14, 0.16),
+            jan_90_put: RawIVPoint(jan_90_put, current_date, 0.145, 0.155),
+            jan_100_call: RawIVPoint(jan_100_call, current_date, 0.129, 0.131),
+            jan_100_put: RawIVPoint(jan_100_put, current_date, 0.129, 0.131),
+            jan_110_call: RawIVPoint(jan_110_call, current_date, 0.13, 0.14),
+            jan_110_put: RawIVPoint(jan_110_put, current_date, 0.125, 0.145),
         },
     )
 
@@ -112,6 +113,7 @@ def expected_jan_final_iv_curve(jan_expiry: dt.datetime) -> FinalIVCurve:
 
 @pytest.fixture
 def feb_raw_iv_curve(
+    current_date: dt.date,
     feb_expiry: dt.datetime,
     feb_90_call: Option,
     feb_90_put: Option,
@@ -124,12 +126,12 @@ def feb_raw_iv_curve(
         feb_expiry,
         ok(),
         {
-            feb_90_call: RawIVPoint(feb_90_call, 0.23, 0.25),
-            feb_90_put: RawIVPoint(feb_90_put, 0.235, 0.245),
-            feb_100_call: RawIVPoint(feb_100_call, 0.229, 0.231),
-            feb_100_put: RawIVPoint(feb_100_put, 0.229, 0.231),
-            feb_110_call: RawIVPoint(feb_110_call, 0.22, 0.23),
-            feb_110_put: RawIVPoint(feb_110_put, 0.215, 0.235),
+            feb_90_call: RawIVPoint(feb_90_call, current_date, 0.23, 0.25),
+            feb_90_put: RawIVPoint(feb_90_put, current_date, 0.235, 0.245),
+            feb_100_call: RawIVPoint(feb_100_call, current_date, 0.229, 0.231),
+            feb_100_put: RawIVPoint(feb_100_put, current_date, 0.229, 0.231),
+            feb_110_call: RawIVPoint(feb_110_call, current_date, 0.22, 0.23),
+            feb_110_put: RawIVPoint(feb_110_put, current_date, 0.215, 0.235),
         },
     )
 

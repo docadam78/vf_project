@@ -72,6 +72,7 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
             df["cp_flag"].values,
             df["exercise_style"].values,
             df["contract_size"].values,
+            df["last_date"].values,
             df["best_bid"].values,
             df["best_offer"].values,
             df["impl_volatility"].values,
@@ -79,9 +80,16 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
         )
 
         raw_iv_curves = {}
-        for (*option_specs, bid_price, ask_price, mid_vol, vega) in rows:
+        for (
+            *option_specs,
+            last_trade_date,
+            bid_price,
+            ask_price,
+            mid_vol,
+            vega,
+        ) in rows:
             raw_iv_point = self._create_raw_iv_point(
-                option_specs, bid_price, ask_price, mid_vol, vega
+                option_specs, last_trade_date, bid_price, ask_price, mid_vol, vega
             )
             expiry = raw_iv_point.option.expiry
 
@@ -95,6 +103,7 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
     def _create_raw_iv_point(
         self,
         option_specs: List,
+        last_trade_date: float,
         bid_price: float,
         ask_price: float,
         mid_vol: float,
@@ -118,6 +127,10 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
         as this indicates a valid IV cannot be found.
 
         :param option_specs: A list of the option contract specs.
+        :param last_trade_date: The last trade date of the option in YYYYMMDD format.
+            The OptionMetrics data supplies this as a float rather than an int. It
+            can be NaN, presumably indicating that the option has never traded (though
+            the documentation does not specify this).
         :param bid_price: Best bid price.
         :param ask_price: Best offer price.
         :param mid_vol: Midpoint implied volatility.
@@ -132,4 +145,23 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
         if bid_vol <= 0:
             bid_vol = np.nan
 
-        return RawIVPoint(create_option(*option_specs), bid_vol, ask_vol)
+        return RawIVPoint(
+            create_option(*option_specs),
+            self._create_last_trade_date(last_trade_date),
+            bid_vol,
+            ask_vol,
+        )
+
+    def _create_last_trade_date(self, date: float) -> dt.date:
+        """
+        Returns a date object representing the given last trade date.
+
+        The last trade date in OptionMetrics data can be NaN. When this happens,
+        set it to the Unix epoch, 19700101, indicating that the option has never traded.
+
+        :param date: Last trade date in OptionMetrics format. YYYYMMDD, and can be NaN.
+        :return: Last trade date formatted as a date object.
+        """
+
+        date_int = 19700101 if np.isnan(date) else int(date)
+        return dt.datetime.strptime(str(date_int), "%Y%m%d").date()

@@ -6,6 +6,8 @@ implementations.
 """
 
 import abc
+from typing import Dict
+
 import numpy as np
 
 from volfitter.domain.datamodel import (
@@ -16,6 +18,8 @@ from volfitter.domain.datamodel import (
     FinalIVPoint,
     Tag,
     ok,
+    Pricing,
+    Option,
 )
 
 
@@ -25,11 +29,14 @@ class AbstractSurfaceFitter(abc.ABC):
     """
 
     @abc.abstractmethod
-    def fit_surface_model(self, raw_iv_surface: RawIVSurface) -> FinalIVSurface:
+    def fit_surface_model(
+        self, raw_iv_surface: RawIVSurface, pricing: Dict[Option, Pricing]
+    ) -> FinalIVSurface:
         """
         Fits a vol surface model to a raw vol surface.
 
         :param raw_iv_surface: The raw vol surface.
+        :param pricing: Dict of option pricing.
         :return: The final, fitted vol surface.
         """
         raise NotImplementedError
@@ -40,27 +47,33 @@ class AbstractPerExpirySurfaceFitter(AbstractSurfaceFitter):
     Abstract base class for vol surface fitters which fit each expiry independently.
     """
 
-    def fit_surface_model(self, raw_iv_surface: RawIVSurface) -> FinalIVSurface:
+    def fit_surface_model(
+        self, raw_iv_surface: RawIVSurface, pricing: Dict[Option, Pricing]
+    ) -> FinalIVSurface:
         """
         Fits a vol surface model to a raw vol surface, fitting each expiry
         independently.
 
         :param raw_iv_surface: The raw vol surface.
+        :param pricing: Dict of option pricing.
         :return: The final, fitted vol surface.
         """
         final_iv_curves = {
-            expiry: self._fit_curve_model(curve)
+            expiry: self._fit_curve_model(curve, pricing)
             for (expiry, curve) in raw_iv_surface.curves.items()
         }
 
         return FinalIVSurface(raw_iv_surface.datetime, final_iv_curves)
 
     @abc.abstractmethod
-    def _fit_curve_model(self, raw_iv_curve: RawIVCurve) -> FinalIVCurve:
+    def _fit_curve_model(
+        self, raw_iv_curve: RawIVCurve, pricing: Dict[Option, Pricing]
+    ) -> FinalIVCurve:
         """
         Fits a vol curve model to a raw vol curve.
 
         :param raw_iv_curve: The raw vol curve.
+        :param pricing: Dict of option pricing.
         :return: The final, fitted vol curve.
         """
         raise NotImplementedError
@@ -71,7 +84,9 @@ class PassThroughSurfaceFitter(AbstractPerExpirySurfaceFitter):
     Pass-through placeholder vol fitter which does as little work as possible.
     """
 
-    def _fit_curve_model(self, raw_iv_curve: RawIVCurve) -> FinalIVCurve:
+    def _fit_curve_model(
+        self, raw_iv_curve: RawIVCurve, pricing: Dict[Option, Pricing]
+    ) -> FinalIVCurve:
         """
         Transforms a raw curve to a final curve doing as little work as possible.
 
@@ -84,6 +99,7 @@ class PassThroughSurfaceFitter(AbstractPerExpirySurfaceFitter):
         curve with the propagated non-OK status is returned.
 
         :param raw_iv_curve: The raw vol curve.
+        :param pricing: Dict of option pricing.
         :return: The final, fitted vol curve.
         """
 

@@ -32,7 +32,7 @@ def test_pass_through_fitter_returns_midpoint_vol_per_strike(
     )
     victim = PassThroughSurfaceFitter()
 
-    final_iv_curve = victim._fit_curve_model(raw_iv_curve)
+    final_iv_curve = victim._fit_curve_model(raw_iv_curve, {})
 
     assert pytest.approx(final_iv_curve.points[100].vol) == (1.1 + 1.9) / 2
     assert pytest.approx(final_iv_curve.points[110].vol) == (1.2 + 1.9) / 2
@@ -51,7 +51,7 @@ def test_pass_through_fitter_propagates_input_curve_failure(
     )
     victim = PassThroughSurfaceFitter()
 
-    final_iv_curve = victim._fit_curve_model(raw_iv_curve)
+    final_iv_curve = victim._fit_curve_model(raw_iv_curve, {})
 
     assert final_iv_curve.status.tag == Tag.FAIL
     assert final_iv_curve.status.message == message

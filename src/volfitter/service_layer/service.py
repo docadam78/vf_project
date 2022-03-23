@@ -68,7 +68,7 @@ class VolfitterService:
             raw_iv_surface, pricing
         )
         final_iv_surface = self.surface_fitter.fit_surface_model(
-            filtered_raw_iv_surface
+            filtered_raw_iv_surface, pricing
         )
 
         self.final_iv_consumer.consume_final_iv_surface(final_iv_surface)

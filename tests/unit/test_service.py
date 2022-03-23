@@ -167,5 +167,7 @@ def test_volfitter_service_passes_raw_surface_through_fitter_to_consumer(
         current_time, forward_curve, {jan_100_call}
     )
     raw_iv_filter.filter_raw_ivs.assert_called_once_with(raw_iv_surface, pricing)
-    surface_fitter.fit_surface_model.assert_called_once_with(filtered_raw_iv_surface)
+    surface_fitter.fit_surface_model.assert_called_once_with(
+        filtered_raw_iv_surface, pricing
+    )
     final_iv_consumer.consume_final_iv_surface.assert_called_once_with(final_iv_surface)

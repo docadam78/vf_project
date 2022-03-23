@@ -50,6 +50,16 @@ def jan_110_put(jan_expiry) -> Option:
 
 
 @pytest.fixture
+def jan_120_call(jan_expiry) -> Option:
+    return option(jan_expiry, 120, OptionKind.CALL)
+
+
+@pytest.fixture
+def jan_120_put(jan_expiry) -> Option:
+    return option(jan_expiry, 120, OptionKind.PUT)
+
+
+@pytest.fixture
 def feb_90_call(feb_expiry) -> Option:
     return option(feb_expiry, 90, OptionKind.CALL)
 

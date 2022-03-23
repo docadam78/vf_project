@@ -13,6 +13,7 @@ from volfitter.domain.datamodel import (
     OptionKind,
     ExerciseStyle,
     RawIVPoint,
+    ok,
 )
 
 
@@ -62,6 +63,7 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
         {
             expected_expiry_1: RawIVCurve(
                 expected_expiry_1,
+                ok(),
                 {
                     expected_option_1: RawIVPoint(
                         expected_option_1, 0.16 - 0.5 * 1 / 50, 0.16 + 0.5 * 1 / 50
@@ -73,6 +75,7 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
             ),
             expected_expiry_2: RawIVCurve(
                 expected_expiry_2,
+                ok(),
                 {
                     expected_option_3: RawIVPoint(
                         expected_option_3, 0.18 - 0.5 * 1 / 70, 0.18 + 0.5 * 1 / 70
@@ -81,6 +84,7 @@ def test_option_metrics_raw_iv_supplier_correctly_constructs_raw_iv_surface_from
             ),
             expected_expiry_3: RawIVCurve(
                 expected_expiry_3,
+                ok(),
                 {
                     expected_option_4: RawIVPoint(
                         expected_option_4, 0.19 - 0.5 * 1 / 80, 0.19 + 0.5 * 1 / 80

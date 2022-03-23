@@ -16,6 +16,7 @@ from volfitter.domain.datamodel import (
     RawIVSurface,
     RawIVPoint,
     RawIVCurve,
+    ok,
 )
 
 
@@ -85,7 +86,7 @@ class OptionMetricsRawIVSupplier(AbstractRawIVSupplier):
             expiry = raw_iv_point.option.expiry
 
             if expiry not in raw_iv_curves:
-                raw_iv_curves[expiry] = RawIVCurve(expiry, {})
+                raw_iv_curves[expiry] = RawIVCurve(expiry, ok(), {})
 
             raw_iv_curves[expiry].points[raw_iv_point.option] = raw_iv_point
 

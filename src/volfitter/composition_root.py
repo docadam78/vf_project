@@ -41,6 +41,7 @@ from volfitter.domain.raw_iv_filtering import (
     CompositeRawIVFilter,
     InTheMoneyFilter,
     NonTwoSidedMarketFilter,
+    InsufficientValidStrikesFilter,
 )
 from volfitter.service_layer.service import VolfitterService
 
@@ -70,6 +71,7 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
         raise ValueError(f"{volfitter_config.volfitter_mode} not currently supported.")
 
     return create_volfitter_service_from_adaptors(
+        volfitter_config,
         current_time_supplier,
         raw_iv_supplier,
         forward_curve_supplier,
@@ -79,6 +81,7 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
 
 
 def create_volfitter_service_from_adaptors(
+    volfitter_config: VolfitterConfig,
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
     forward_curve_supplier: AbstractForwardCurveSupplier,
@@ -97,7 +100,11 @@ def create_volfitter_service_from_adaptors(
     """
 
     raw_iv_filter = CompositeRawIVFilter(
-        [InTheMoneyFilter(), NonTwoSidedMarketFilter()]
+        [
+            InTheMoneyFilter(),
+            NonTwoSidedMarketFilter(),
+            InsufficientValidStrikesFilter(volfitter_config.raw_iv_filtering_config),
+        ]
     )
     fitter = PassThroughSurfaceFitter()
 

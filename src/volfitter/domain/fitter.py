@@ -14,6 +14,8 @@ from volfitter.domain.datamodel import (
     RawIVCurve,
     FinalIVCurve,
     FinalIVPoint,
+    Tag,
+    ok,
 )
 
 
@@ -78,9 +80,15 @@ class PassThroughSurfaceFitter(AbstractPerExpirySurfaceFitter):
         tightest market between the call and put is used (so in particular, the bid
         and ask do not have to come from the same option).
 
+        If the status of the input curve is not OK, the curve is not fit: An empty
+        curve with the propagated non-OK status is returned.
+
         :param raw_iv_curve: The raw vol curve.
         :return: The final, fitted vol curve.
         """
+
+        if raw_iv_curve.status.tag != Tag.OK:
+            return FinalIVCurve(raw_iv_curve.expiry, raw_iv_curve.status, {})
 
         best_bids_by_strike = {}
         best_asks_by_strike = {}
@@ -97,13 +105,13 @@ class PassThroughSurfaceFitter(AbstractPerExpirySurfaceFitter):
             strike: FinalIVPoint(
                 raw_iv_curve.expiry,
                 strike,
-                midpoint(best_bids_by_strike[strike], best_asks_by_strike[strike]),
+                _midpoint(best_bids_by_strike[strike], best_asks_by_strike[strike]),
             )
             for strike in best_bids_by_strike.keys()
         }
 
-        return FinalIVCurve(raw_iv_curve.expiry, final_iv_points)
+        return FinalIVCurve(raw_iv_curve.expiry, ok(), final_iv_points)
 
 
-def midpoint(bid: float, ask: float) -> float:
+def _midpoint(bid: float, ask: float) -> float:
     return 0.5 * (bid + ask)

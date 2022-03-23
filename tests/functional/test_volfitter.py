@@ -11,6 +11,7 @@ from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSuppli
 from volfitter.adapters.pricing_supplier import AbstractPricingSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.composition_root import create_volfitter_service_from_adaptors
+from volfitter.config import VolfitterConfig
 from volfitter.domain.datamodel import (
     RawIVSurface,
     Option,
@@ -21,8 +22,17 @@ from volfitter.domain.datamodel import (
     FinalIVSurface,
     ForwardCurve,
     Pricing,
+    ok,
 )
 from volfitter.service_layer.service import VolfitterService
+
+
+@pytest.fixture
+def volfitter_config() -> VolfitterConfig:
+    # If from_environ is passed a dict, it will read its parameters from that
+    # "environment" rather than from the process's env vars. Passing an empty dict
+    # ensures the default parameters are used, regardless of what env vars may be set.
+    return VolfitterConfig.from_environ({})
 
 
 @pytest.fixture
@@ -75,6 +85,7 @@ def jan_raw_iv_curve(
 ) -> RawIVCurve:
     return RawIVCurve(
         jan_expiry,
+        ok(),
         {
             jan_90_call: RawIVPoint(jan_90_call, 0.14, 0.16),
             jan_90_put: RawIVPoint(jan_90_put, 0.145, 0.155),
@@ -90,6 +101,7 @@ def jan_raw_iv_curve(
 def expected_jan_final_iv_curve(jan_expiry: dt.datetime) -> FinalIVCurve:
     return FinalIVCurve(
         jan_expiry,
+        ok(),
         {
             90: FinalIVPoint(jan_expiry, 90, 0.15),
             100: FinalIVPoint(jan_expiry, 100, 0.13),
@@ -110,6 +122,7 @@ def feb_raw_iv_curve(
 ) -> RawIVCurve:
     return RawIVCurve(
         feb_expiry,
+        ok(),
         {
             feb_90_call: RawIVPoint(feb_90_call, 0.23, 0.25),
             feb_90_put: RawIVPoint(feb_90_put, 0.235, 0.245),
@@ -125,6 +138,7 @@ def feb_raw_iv_curve(
 def expected_feb_final_iv_curve(feb_expiry: dt.datetime) -> FinalIVCurve:
     return FinalIVCurve(
         feb_expiry,
+        ok(),
         {
             90: FinalIVPoint(feb_expiry, 90, 0.24),
             100: FinalIVPoint(feb_expiry, 100, 0.23),
@@ -198,6 +212,7 @@ def final_iv_consumer() -> Mock:
 
 @pytest.fixture
 def volfitter_service(
+    volfitter_config: VolfitterConfig,
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
     forward_curve_supplier: AbstractForwardCurveSupplier,
@@ -205,6 +220,7 @@ def volfitter_service(
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     return create_volfitter_service_from_adaptors(
+        volfitter_config,
         current_time_supplier,
         raw_iv_supplier,
         forward_curve_supplier,

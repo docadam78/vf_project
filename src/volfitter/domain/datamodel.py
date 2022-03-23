@@ -19,6 +19,12 @@ class ExerciseStyle(Enum):
     EUROPEAN = auto()
 
 
+class Tag(Enum):
+    OK = auto()
+    WARN = auto()
+    FAIL = auto()
+
+
 @dataclass(frozen=True)
 class Option:
     symbol: str
@@ -27,6 +33,12 @@ class Option:
     kind: OptionKind
     exercise_style: ExerciseStyle
     contract_size: int
+
+
+@dataclass(frozen=True)
+class Status:
+    tag: Tag
+    message: str = ""
 
 
 @dataclass(frozen=True)
@@ -39,6 +51,7 @@ class RawIVPoint:
 @dataclass(frozen=True)
 class RawIVCurve:
     expiry: dt.datetime
+    status: Status
     points: Dict[Option, RawIVPoint]
 
 
@@ -58,6 +71,7 @@ class FinalIVPoint:
 @dataclass(frozen=True)
 class FinalIVCurve:
     expiry: dt.datetime
+    status: Status
     points: Dict[float, FinalIVPoint]
 
 
@@ -82,3 +96,15 @@ class Pricing:
     vega: float
     theta: float
     time_to_expiry: float
+
+
+def ok() -> Status:
+    return Status(Tag.OK)
+
+
+def warn(message: str) -> Status:
+    return Status(Tag.WARN, message)
+
+
+def fail(message: str) -> Status:
+    return Status(Tag.FAIL, message)

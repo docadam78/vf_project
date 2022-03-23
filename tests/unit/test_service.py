@@ -20,6 +20,7 @@ from volfitter.domain.datamodel import (
     RawIVPoint,
     FinalIVCurve,
     FinalIVPoint,
+    ok,
 )
 from volfitter.domain.fitter import AbstractSurfaceFitter
 from volfitter.domain.raw_iv_filtering import AbstractRawIVFilter
@@ -34,7 +35,7 @@ def raw_iv_surface(
         current_time,
         {
             jan_expiry: RawIVCurve(
-                jan_expiry, {jan_100_call: RawIVPoint(jan_100_call, 1, 2)}
+                jan_expiry, ok(), {jan_100_call: RawIVPoint(jan_100_call, 1, 2)}
             )
         },
     )
@@ -48,7 +49,7 @@ def filtered_raw_iv_surface(
         current_time,
         {
             jan_expiry: RawIVCurve(
-                jan_expiry, {jan_100_call: RawIVPoint(jan_100_call, 3, 4)}
+                jan_expiry, ok(), {jan_100_call: RawIVPoint(jan_100_call, 3, 4)}
             )
         },
     )
@@ -70,7 +71,11 @@ def final_iv_surface(
 ) -> FinalIVSurface:
     return FinalIVSurface(
         current_time,
-        {jan_expiry: FinalIVCurve(jan_expiry, {1: FinalIVPoint(jan_expiry, 1, 2)})},
+        {
+            jan_expiry: FinalIVCurve(
+                jan_expiry, ok(), {1: FinalIVPoint(jan_expiry, 1, 2)}
+            )
+        },
     )
 
 

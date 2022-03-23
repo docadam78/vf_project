@@ -30,7 +30,7 @@ class VolfitterConfig:
         default=10, converter=int, help="Fit interval in seconds."
     )
 
-    @environ.config
+    @environ.config(prefix="SAMPLE_DATA_CONFIG")
     class SampleDataConfig:
         input_data_path = environ.var(default="data/input", help="The input data path.")
         option_data_file_substring = environ.var(
@@ -48,4 +48,13 @@ class VolfitterConfig:
             default="final_iv_surface.pickle", help="The output filename."
         )
 
+    @environ.config(prefix="RAW_IV_FILTERING_CONFIG")
+    class RawIVFilteringConfig:
+        min_valid_strikes_fraction = environ.var(
+            default=0.1,
+            converter=float,
+            help="An expiry needs at least this fraction of its strikes to have valid markets in order to be fit.",
+        )
+
     sample_data_config = environ.group(SampleDataConfig, optional=True)
+    raw_iv_filtering_config = environ.group(RawIVFilteringConfig)

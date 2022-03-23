@@ -43,6 +43,7 @@ from volfitter.domain.raw_iv_filtering import (
     NonTwoSidedMarketFilter,
     InsufficientValidStrikesFilter,
     StaleLastTradeDateFilter,
+    WideMarketFilter,
 )
 from volfitter.service_layer.service import VolfitterService
 
@@ -100,12 +101,14 @@ def create_volfitter_service_from_adaptors(
     :return: VolfitterService.
     """
 
+    raw_iv_filtering_config = volfitter_config.raw_iv_filtering_config
     raw_iv_filter = CompositeRawIVFilter(
         [
             InTheMoneyFilter(),
             NonTwoSidedMarketFilter(),
-            StaleLastTradeDateFilter(volfitter_config.raw_iv_filtering_config),
-            InsufficientValidStrikesFilter(volfitter_config.raw_iv_filtering_config),
+            StaleLastTradeDateFilter(raw_iv_filtering_config),
+            WideMarketFilter(raw_iv_filtering_config),
+            InsufficientValidStrikesFilter(raw_iv_filtering_config),
         ]
     )
     fitter = PassThroughSurfaceFitter()

@@ -16,6 +16,7 @@ from volfitter.domain.raw_iv_filtering import (
     NonTwoSidedMarketFilter,
     InsufficientValidStrikesFilter,
     StaleLastTradeDateFilter,
+    WideMarketFilter,
 )
 
 
@@ -124,6 +125,33 @@ def test_stale_last_trade_date_filter_discards_stale_markets(
     filtered_curve = victim._filter_expiry(current_time, raw_curve, {})
 
     assert filtered_curve.points.keys() == {jan_90_put}
+
+
+def test_wide_market_filter_discards_wide_outliers(
+    current_time: dt.datetime,
+    jan_expiry: dt.datetime,
+    jan_90_put: Option,
+    jan_100_put: Option,
+    jan_110_put: Option,
+):
+    config = VolfitterConfig.RawIVFilteringConfig.from_environ(
+        {"RAW_IV_FILTERING_CONFIG_WIDE_MARKET_OUTLIER_MAD_THRESHOLD": 0.5}
+    )
+    raw_curve = RawIVCurve(
+        jan_expiry,
+        ok(),
+        {
+            jan_90_put: RawIVPoint(jan_90_put, current_time.date(), 9.5, 10.5),
+            jan_100_put: RawIVPoint(jan_100_put, current_time.date(), 9, 11),
+            jan_110_put: RawIVPoint(jan_100_put, current_time.date(), 8, 12),
+        },
+    )
+
+    victim = WideMarketFilter(config)
+
+    filtered_curve = victim._filter_expiry(current_time, raw_curve, {})
+
+    assert filtered_curve.points.keys() == {jan_90_put, jan_100_put}
 
 
 def test_insufficient_valid_strike_filter_propagates_preexisting_failure(

@@ -209,6 +209,95 @@ class StaleLastTradeDateFilter(AbstractPerExpiryRawIVFilter):
             )
 
 
+class WideMarketFilter(AbstractPerExpiryRawIVFilter):
+    """
+    Discards markets which are wide outliers relative to their expiry's typical market width.
+    """
+
+    def __init__(self, raw_iv_filtering_config: VolfitterConfig.RawIVFilteringConfig):
+        self.raw_iv_filtering_config = raw_iv_filtering_config
+
+    def _filter_expiry(
+        self,
+        current_time: dt.datetime,
+        raw_iv_curve: RawIVCurve,
+        pricing: Dict[Option, Pricing],
+    ) -> RawIVCurve:
+        """
+        Discards wide market outliers.
+
+        The outlier detection works by first calculating the median and median absolute
+        deviation (MAD) of the market widths in the expiry. The median and MAD are
+        measures of central tendency and dispersion, respectively, that are robust to
+        outliers.
+
+        Then, markets which are wider than a configurable amount of MADs beyond the
+        median width are discarded.
+
+        :param current_time: The current time.
+        :param raw_iv_surface: RawIVCurve.
+        :param pricing: Dict of Pricings.
+        :return: Filtered RawIVCurve.
+        """
+
+        market_widths = np.array(
+            [self._calc_market_width(point) for point in raw_iv_curve.points.values()]
+        )
+
+        # Suppress PyCharm type checker warnings: It thinks that the numpy calls are
+        # returning ndarrays, which is true in general, but because we are passing them
+        # 1-dimensional input arrays the return type in our case is actually a float.
+
+        # noinspection PyTypeChecker
+        median_width: float = np.median(market_widths)
+        # noinspection PyTypeChecker
+        median_absolute_deviation: float = np.median(
+            np.abs(market_widths - median_width)
+        )
+
+        retained_points = {
+            option: point
+            for (option, point) in raw_iv_curve.points.items()
+            if not self._too_wide(point, median_width, median_absolute_deviation)
+        }
+
+        self._log_if_necessary(
+            raw_iv_curve.expiry,
+            len(raw_iv_curve.points) - len(retained_points),
+            len(raw_iv_curve.points),
+        )
+
+        return RawIVCurve(raw_iv_curve.expiry, raw_iv_curve.status, retained_points)
+
+    def _too_wide(
+        self, raw_iv_point: RawIVPoint, width_median: float, width_mad: float
+    ) -> bool:
+        return (
+            self._calc_market_width(raw_iv_point) - width_median
+            > self.raw_iv_filtering_config.wide_market_outlier_mad_threshold * width_mad
+        )
+
+    def _calc_market_width(self, raw_iv_point: RawIVPoint) -> float:
+        return raw_iv_point.ask_vol - raw_iv_point.bid_vol
+
+    def _log_if_necessary(
+        self, expiry: dt.datetime, num_discarded_points: int, num_original_points: int
+    ) -> None:
+        if num_discarded_points > 0:
+            _LOGGER.info(
+                f"Discarding {num_discarded_points} of {num_original_points} strikes "
+                f"in expiry {expiry} because they were too wide."
+            )
+
+    def _discard_point(
+        self,
+        current_time: dt.datetime,
+        raw_iv_point: RawIVPoint,
+        pricing: Dict[Option, Pricing],
+    ) -> bool:
+        raise NotImplementedError
+
+
 class InsufficientValidStrikesFilter(AbstractPerExpiryRawIVFilter):
     """
     Marks a RawIVCurve as FAILed if it does not have enough valid strikes.

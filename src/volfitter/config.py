@@ -60,6 +60,11 @@ class VolfitterConfig:
             converter=int,
             help="Filter out strikes which have not traded in more than this many business days.",
         )
+        wide_market_outlier_mad_threshold = environ.var(
+            default=15,
+            converter=float,
+            help="Filter out markets which are wider than this many median absolute deviations (MADs) beyond the median width of the expiry.",
+        )
 
     sample_data_config = environ.group(SampleDataConfig, optional=True)
     raw_iv_filtering_config = environ.group(RawIVFilteringConfig)

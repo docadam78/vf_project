@@ -44,6 +44,7 @@ from volfitter.domain.raw_iv_filtering import (
     InsufficientValidStrikesFilter,
     StaleLastTradeDateFilter,
     WideMarketFilter,
+    ExpiredExpiryFilter,
 )
 from volfitter.service_layer.service import VolfitterService
 
@@ -104,6 +105,7 @@ def create_volfitter_service_from_adaptors(
     raw_iv_filtering_config = volfitter_config.raw_iv_filtering_config
     raw_iv_filter = CompositeRawIVFilter(
         [
+            ExpiredExpiryFilter(),
             InTheMoneyFilter(),
             NonTwoSidedMarketFilter(),
             StaleLastTradeDateFilter(raw_iv_filtering_config),

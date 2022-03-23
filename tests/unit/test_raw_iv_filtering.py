@@ -17,7 +17,33 @@ from volfitter.domain.raw_iv_filtering import (
     InsufficientValidStrikesFilter,
     StaleLastTradeDateFilter,
     WideMarketFilter,
+    ExpiredExpiryFilter,
 )
+
+
+def test_expired_expiry_filter_marks_expired_expiry_as_warn(jan_expiry: dt.datetime):
+    raw_curve = RawIVCurve(jan_expiry, ok(), {})
+
+    victim = ExpiredExpiryFilter()
+
+    filtered_curve = victim._filter_expiry(jan_expiry, raw_curve, {})
+
+    assert filtered_curve.status.tag == Tag.WARN
+    assert filtered_curve.status.message == "Expired."
+
+
+def test_expired_expiry_filter_does_not_mark_unexpired_expiry_as_warn(
+    jan_expiry: dt.datetime,
+):
+    raw_curve = RawIVCurve(jan_expiry, ok(), {})
+
+    victim = ExpiredExpiryFilter()
+
+    filtered_curve = victim._filter_expiry(
+        jan_expiry - dt.timedelta(seconds=1), raw_curve, {}
+    )
+
+    assert filtered_curve == raw_curve
 
 
 def test_in_the_money_filter_discards_ITM_calls(

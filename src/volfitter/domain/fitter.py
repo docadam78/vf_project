@@ -79,9 +79,12 @@ class AbstractPerExpirySurfaceFitter(AbstractSurfaceFitter):
         raise NotImplementedError
 
 
-class PassThroughSurfaceFitter(AbstractPerExpirySurfaceFitter):
+class MidMarketSurfaceFitter(AbstractPerExpirySurfaceFitter):
     """
-    Pass-through placeholder vol fitter which does as little work as possible.
+    Mid-market placeholder vol fitter which does as little work as possible.
+
+    This vol "fitter" is simply a toy implementation to demonstrate how different
+    fitters could be plugged in.
     """
 
     def _fit_curve_model(

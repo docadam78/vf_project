@@ -36,7 +36,7 @@ from volfitter.adapters.sample_data_loader import (
     CachingDataFrameSupplier,
 )
 from volfitter.config import VolfitterConfig, VolfitterMode
-from volfitter.domain.fitter import PassThroughSurfaceFitter
+from volfitter.domain.fitter import MidMarketSurfaceFitter
 from volfitter.domain.raw_iv_filtering import (
     CompositeRawIVFilter,
     InTheMoneyFilter,
@@ -113,7 +113,7 @@ def create_volfitter_service_from_adaptors(
             InsufficientValidStrikesFilter(raw_iv_filtering_config),
         ]
     )
-    fitter = PassThroughSurfaceFitter()
+    fitter = MidMarketSurfaceFitter()
 
     return VolfitterService(
         current_time_supplier,

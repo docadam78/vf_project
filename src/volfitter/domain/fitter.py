@@ -7,6 +7,7 @@ implementations.
 
 import abc
 import datetime as dt
+import logging
 import numpy as np
 
 from scipy import linalg, optimize
@@ -27,6 +28,8 @@ from volfitter.domain.datamodel import (
     Status,
     fail,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class AbstractSurfaceFitter(abc.ABC):
@@ -202,7 +205,13 @@ class UnconstrainedQuasiExplicitSVICalibrator(AbstractSVICalibrator):
             outer_cost_function, initial_guess, bounds=bounds, method="Nelder-Mead"
         )
 
-        status = ok() if optimize_result.success else fail(optimize_result.message)
+        if optimize_result.success:
+            status = ok()
+        else:
+            status = fail(optimize_result.message)
+            _LOGGER.warning(
+                f"SVI calibration failed for expiry {expiry}: {optimize_result.message}"
+            )
 
         smoothness, center = optimize_result.x[0], optimize_result.x[1]
         level, angle, tilt = self._solve_reduced_problem(

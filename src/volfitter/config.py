@@ -17,6 +17,18 @@ class VolfitterMode(Enum):
     SAMPLE_DATA = "SAMPLE_DATA"
 
 
+class SurfaceModel(Enum):
+    MID_MARKET = "MID_MARKET"
+    SVI = "SVI"
+
+
+class SVICalibrator(Enum):
+    UNCONSTRAINED_QUASI_EXPLICIT = "UNCONSTRAINED_QUASI_EXPLICIT"
+    VERTICAL_SPREAD_ARBITRAGE_FREE_QUASI_EXPLICIT = (
+        "VERTICAL_SPREAD_ARBITRAGE_FREE_QUASI_EXPLICIT"
+    )
+
+
 @environ.config(prefix="VOLFITTER")
 class VolfitterConfig:
     symbol = environ.var(default="AMZN", help="The underlying symbol.")
@@ -28,6 +40,11 @@ class VolfitterConfig:
     log_file = environ.var(default="logs/volfitter.log", help="The log file.")
     fit_interval_s = environ.var(
         default=10, converter=int, help="Fit interval in seconds."
+    )
+    surface_model = environ.var(
+        default=SurfaceModel.SVI,
+        converter=SurfaceModel,
+        help="The implied volatility surface model to fit to the market.",
     )
 
     @environ.config(prefix="SAMPLE_DATA_CONFIG")
@@ -66,5 +83,14 @@ class VolfitterConfig:
             help="Filter out markets which are wider than this many median absolute deviations (MADs) beyond the median width of the expiry.",
         )
 
+    @environ.config(prefix="SVI_CONFIG")
+    class SVIConfig:
+        svi_calibrator = environ.var(
+            default=SVICalibrator.UNCONSTRAINED_QUASI_EXPLICIT,
+            converter=SVICalibrator,
+            help="The calibrator to use for fitting the SVI model.",
+        )
+
     sample_data_config = environ.group(SampleDataConfig, optional=True)
     raw_iv_filtering_config = environ.group(RawIVFilteringConfig)
+    svi_config = environ.group(SVIConfig, optional=True)

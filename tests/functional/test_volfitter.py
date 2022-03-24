@@ -5,6 +5,7 @@ import pytest
 
 from unittest.mock import Mock
 
+from tests.assertions import assert_surface_approx_equal
 from volfitter.adapters.current_time_supplier import AbstractCurrentTimeSupplier
 from volfitter.adapters.final_iv_consumer import AbstractFinalIVConsumer
 from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSupplier
@@ -238,7 +239,7 @@ def test_fits_final_surface_from_raw_surface(
 ):
     volfitter_service.fit_full_surface()
 
-    assert (
-        final_iv_consumer.consume_final_iv_surface.call_args.args[0]
-        == expected_final_iv_surface
+    assert_surface_approx_equal(
+        final_iv_consumer.consume_final_iv_surface.call_args.args[0],
+        expected_final_iv_surface,
     )

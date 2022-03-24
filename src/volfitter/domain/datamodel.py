@@ -99,6 +99,15 @@ class Pricing:
     time_to_expiry: float
 
 
+@dataclass(frozen=True)
+class SVIParameters:
+    level: float  # "a" in Gatheral 2004
+    angle: float  # "b" in Gatheral 2004
+    smoothness: float  # "sigma" in Gatheral 2004
+    tilt: float  # "rho" in Gatheral 2004
+    center: float  # "m" in Gatheral 2004
+
+
 def ok() -> Status:
     return Status(Tag.OK)
 

@@ -35,8 +35,13 @@ from volfitter.adapters.sample_data_loader import (
     ConcatenatingDataFrameLoader,
     CachingDataFrameSupplier,
 )
-from volfitter.config import VolfitterConfig, VolfitterMode
-from volfitter.domain.fitter import MidMarketSurfaceFitter
+from volfitter.config import VolfitterConfig, VolfitterMode, SurfaceModel, SVICalibrator
+from volfitter.domain.fitter import (
+    MidMarketSurfaceFitter,
+    SVISurfaceFitter,
+    UnconstrainedQuasiExplicitSVICalibrator,
+    AbstractSurfaceFitter,
+)
 from volfitter.domain.raw_iv_filtering import (
     CompositeRawIVFilter,
     InTheMoneyFilter,
@@ -92,8 +97,9 @@ def create_volfitter_service_from_adaptors(
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     """
-    Creates a VolfitterService from the supplied adaptors.
+    Creates a VolfitterService from the supplied adaptors and config.
 
+    :param volfitter_config: VolfitterConfig.
     :param current_time_supplier: AbstractCurrentTimeSupplier.
     :param raw_iv_supplier: AbstractRawIVSupplier.
     :param forward_curve_supplier: AbstractForwardCurveSupplier.
@@ -113,7 +119,13 @@ def create_volfitter_service_from_adaptors(
             InsufficientValidStrikesFilter(raw_iv_filtering_config),
         ]
     )
-    fitter = MidMarketSurfaceFitter()
+
+    if volfitter_config.surface_model == SurfaceModel.MID_MARKET:
+        fitter = MidMarketSurfaceFitter()
+    elif volfitter_config.surface_model == SurfaceModel.SVI:
+        fitter = _create_svi_fitter(volfitter_config.svi_config)
+    else:
+        raise ValueError(f"{volfitter_config.surface_model} not currently supported.")
 
     return VolfitterService(
         current_time_supplier,
@@ -124,6 +136,22 @@ def create_volfitter_service_from_adaptors(
         fitter,
         final_iv_consumer,
     )
+
+
+def _create_svi_fitter(svi_config: VolfitterConfig.SVIConfig) -> AbstractSurfaceFitter:
+    """
+    Creates an SVI fitter from the supplied config.
+
+    :param svi_config: SVIConfig.
+    :return: SVISurfaceFitter.
+    """
+
+    if svi_config.svi_calibrator == SVICalibrator.UNCONSTRAINED_QUASI_EXPLICIT:
+        calibrator = UnconstrainedQuasiExplicitSVICalibrator()
+    else:
+        raise ValueError(f"{svi_config.svi_calibrator} not currently supported.")
+
+    return SVISurfaceFitter(calibrator)
 
 
 def _create_sample_data_adaptors(

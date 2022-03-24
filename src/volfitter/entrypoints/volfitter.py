@@ -27,6 +27,7 @@ def run():
         filemode="w",
         level=logging.INFO,
     )
+    logging.captureWarnings(True)
 
     volfitter_service = create_volfitter_service(volfitter_config)
 

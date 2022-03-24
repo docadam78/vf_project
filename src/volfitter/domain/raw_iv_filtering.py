@@ -288,6 +288,9 @@ class WideMarketFilter(AbstractPerExpiryRawIVFilter):
         :return: Filtered RawIVCurve.
         """
 
+        if len(raw_iv_curve.points) == 0:
+            return raw_iv_curve
+
         market_widths = np.array(
             [self._calc_market_width(point) for point in raw_iv_curve.points.values()]
         )

@@ -14,6 +14,7 @@ from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSuppli
 from volfitter.adapters.pricing_supplier import AbstractPricingSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
 from volfitter.domain.datamodel import RawIVSurface, Option
+from volfitter.domain.final_iv_validation import AbstractFinalIVValidator
 from volfitter.domain.fitter import AbstractSurfaceFitter
 from volfitter.domain.raw_iv_filtering import AbstractRawIVFilter
 
@@ -33,6 +34,7 @@ class VolfitterService:
         pricing_supplier: AbstractPricingSupplier,
         raw_iv_filter: AbstractRawIVFilter,
         surface_fitter: AbstractSurfaceFitter,
+        final_iv_validator: AbstractFinalIVValidator,
         final_iv_consumer: AbstractFinalIVConsumer,
     ):
         self.current_time_supplier = current_time_supplier
@@ -41,6 +43,7 @@ class VolfitterService:
         self.pricing_supplier = pricing_supplier
         self.raw_iv_filter = raw_iv_filter
         self.surface_fitter = surface_fitter
+        self.final_iv_validator = final_iv_validator
         self.final_iv_consumer = final_iv_consumer
 
     def fit_full_surface(self) -> None:
@@ -48,7 +51,8 @@ class VolfitterService:
         Fits a full final IV surface.
 
         Grabs the latest raw IV surface, passes it through the fitter, and passes the
-        result to the final IV surface consumer.
+        result to the final IV surface consumer. Performs input filtering and output
+        validation.
         """
         current_time = self.current_time_supplier.get_current_time()
         _LOGGER.info(f"Starting run for {current_time}")
@@ -70,8 +74,11 @@ class VolfitterService:
         final_iv_surface = self.surface_fitter.fit_surface_model(
             filtered_raw_iv_surface, pricing
         )
+        validated_final_iv_surface = self.final_iv_validator.validate_final_ivs(
+            final_iv_surface, raw_iv_surface, pricing
+        )
 
-        self.final_iv_consumer.consume_final_iv_surface(final_iv_surface)
+        self.final_iv_consumer.consume_final_iv_surface(validated_final_iv_surface)
 
     def _get_expiries(self, raw_iv_surface: RawIVSurface) -> Collection[dt.datetime]:
         return set(raw_iv_surface.curves.keys())

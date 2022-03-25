@@ -36,6 +36,10 @@ from volfitter.adapters.sample_data_loader import (
     CachingDataFrameSupplier,
 )
 from volfitter.config import VolfitterConfig, VolfitterMode, SurfaceModel, SVICalibrator
+from volfitter.domain.final_iv_validation import (
+    CompositeFinalIVValidator,
+    CrossedPnLFinalIVValidator,
+)
 from volfitter.domain.fitter import (
     MidMarketSurfaceFitter,
     SVISurfaceFitter,
@@ -127,6 +131,11 @@ def create_volfitter_service_from_adaptors(
     else:
         raise ValueError(f"{volfitter_config.surface_model} not currently supported.")
 
+    final_iv_validation_config = volfitter_config.final_iv_validation_config
+    final_iv_validator = CompositeFinalIVValidator(
+        [CrossedPnLFinalIVValidator(final_iv_validation_config)]
+    )
+
     return VolfitterService(
         current_time_supplier,
         raw_iv_supplier,
@@ -134,6 +143,7 @@ def create_volfitter_service_from_adaptors(
         pricing_supplier,
         raw_iv_filter,
         fitter,
+        final_iv_validator,
         final_iv_consumer,
     )
 

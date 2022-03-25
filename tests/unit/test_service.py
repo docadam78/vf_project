@@ -22,6 +22,7 @@ from volfitter.domain.datamodel import (
     FinalIVPoint,
     ok,
 )
+from volfitter.domain.final_iv_validation import AbstractFinalIVValidator
 from volfitter.domain.fitter import AbstractSurfaceFitter
 from volfitter.domain.raw_iv_filtering import AbstractRawIVFilter
 from volfitter.service_layer.service import VolfitterService
@@ -84,6 +85,20 @@ def final_iv_surface(
 
 
 @pytest.fixture
+def validated_final_iv_surface(
+    current_time: dt.datetime, jan_expiry: dt.datetime
+) -> FinalIVSurface:
+    return FinalIVSurface(
+        current_time,
+        {
+            jan_expiry: FinalIVCurve(
+                jan_expiry, ok(), {1: FinalIVPoint(jan_expiry, 3, 4)}
+            )
+        },
+    )
+
+
+@pytest.fixture
 def current_time_supplier(current_time: dt.datetime) -> Mock:
     current_time_supplier = Mock(spec_set=AbstractCurrentTimeSupplier)
     current_time_supplier.get_current_time.return_value = current_time
@@ -126,6 +141,13 @@ def surface_fitter(final_iv_surface: FinalIVSurface) -> Mock:
 
 
 @pytest.fixture
+def final_iv_validator(validated_final_iv_surface: FinalIVSurface) -> Mock:
+    validator = Mock(spec_set=AbstractFinalIVValidator)
+    validator.validate_final_ivs.return_value = validated_final_iv_surface
+    return validator
+
+
+@pytest.fixture
 def final_iv_consumer() -> Mock:
     return Mock(spec_set=AbstractFinalIVConsumer)
 
@@ -139,12 +161,14 @@ def test_volfitter_service_passes_raw_surface_through_fitter_to_consumer(
     pricing: Dict[Option, Pricing],
     filtered_raw_iv_surface: RawIVSurface,
     final_iv_surface: FinalIVSurface,
+    validated_final_iv_surface: FinalIVSurface,
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: Mock,
     forward_curve_supplier: Mock,
     pricing_supplier: Mock,
     raw_iv_filter: Mock,
     surface_fitter: Mock,
+    final_iv_validator: Mock,
     final_iv_consumer: Mock,
 ):
     victim = VolfitterService(
@@ -154,6 +178,7 @@ def test_volfitter_service_passes_raw_surface_through_fitter_to_consumer(
         pricing_supplier,
         raw_iv_filter,
         surface_fitter,
+        final_iv_validator,
         final_iv_consumer,
     )
 
@@ -170,4 +195,9 @@ def test_volfitter_service_passes_raw_surface_through_fitter_to_consumer(
     surface_fitter.fit_surface_model.assert_called_once_with(
         filtered_raw_iv_surface, pricing
     )
-    final_iv_consumer.consume_final_iv_surface.assert_called_once_with(final_iv_surface)
+    final_iv_validator.validate_final_ivs.assert_called_once_with(
+        final_iv_surface, raw_iv_surface, pricing
+    )
+    final_iv_consumer.consume_final_iv_surface.assert_called_once_with(
+        validated_final_iv_surface
+    )

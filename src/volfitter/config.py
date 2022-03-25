@@ -91,6 +91,20 @@ class VolfitterConfig:
             help="The calibrator to use for fitting the SVI model.",
         )
 
+    @environ.config(prefix="FINAL_IV_VALIDATION_CONFIG")
+    class FinalIVValidationConfig:
+        crossed_pnl_warn_threshold = environ.var(
+            default=20,
+            converter=float,
+            help="An expiry will be marked as WARN if its total crossed PnL exceeds this threshold.",
+        )
+        crossed_pnl_fail_threshold = environ.var(
+            default=100,
+            converter=float,
+            help="An expiry will be marked as FAIL if its total crossed PnL exceeds this threshold.",
+        )
+
     sample_data_config = environ.group(SampleDataConfig, optional=True)
     raw_iv_filtering_config = environ.group(RawIVFilteringConfig)
     svi_config = environ.group(SVIConfig, optional=True)
+    final_iv_validation_config = environ.group(FinalIVValidationConfig)

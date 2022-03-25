@@ -75,7 +75,7 @@ class AbstractPerExpiryRawIVFilter(AbstractRawIVFilter):
         """
         Filters a single raw IV curve.
         :param current_time: The current time.
-        :param raw_iv_surface: RawIVCurve.
+        :param raw_iv_curve: RawIVCurve.
         :param pricing: Dict of Pricings.
         :return: Filtered RawIVCurve.
         """

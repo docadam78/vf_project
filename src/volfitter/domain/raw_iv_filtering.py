@@ -21,7 +21,6 @@ from volfitter.domain.datamodel import (
     OptionKind,
     Tag,
     fail,
-    warn,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -136,7 +135,7 @@ class CompositeRawIVFilter(AbstractRawIVFilter):
 
 class ExpiredExpiryFilter(AbstractPerExpiryRawIVFilter):
     """
-    Marks a RawIVCurve as WARN if it has already expired.
+    Marks a RawIVCurve as FAIL if it has already expired.
     """
 
     def _filter_expiry(
@@ -146,18 +145,18 @@ class ExpiredExpiryFilter(AbstractPerExpiryRawIVFilter):
         pricing: Dict[Option, Pricing],
     ) -> RawIVCurve:
         """
-        Marks a RawIVCurve as WARN if it has already expired.
+        Marks a RawIVCurve as FAIL if it has already expired.
 
-        If the RawIVCurve is already marked FAIL or WARN, that status message is
+        If the RawIVCurve is already marked FAIL, that status message is
         propagated rather than overwritten.
 
         :param current_time: The current time.
         :param raw_iv_surface: RawIVCurve.
         :param pricing: Dict of Pricings.
-        :return: RawIVCurve, potentially with its status set to WARN.
+        :return: RawIVCurve, potentially with its status set to FAIL.
         """
 
-        if raw_iv_curve.status.tag != Tag.OK:
+        if raw_iv_curve.status.tag == Tag.FAIL:
             return raw_iv_curve
 
         if raw_iv_curve.expiry <= current_time:
@@ -166,7 +165,7 @@ class ExpiredExpiryFilter(AbstractPerExpiryRawIVFilter):
             )
             return RawIVCurve(
                 raw_iv_curve.expiry,
-                warn("Expired."),
+                fail("Expired."),
                 raw_iv_curve.points,
             )
         else:

@@ -21,18 +21,18 @@ from volfitter.domain.raw_iv_filtering import (
 )
 
 
-def test_expired_expiry_filter_marks_expired_expiry_as_warn(jan_expiry: dt.datetime):
+def test_expired_expiry_filter_marks_expired_expiry_as_fail(jan_expiry: dt.datetime):
     raw_curve = RawIVCurve(jan_expiry, ok(), {})
 
     victim = ExpiredExpiryFilter()
 
     filtered_curve = victim._filter_expiry(jan_expiry, raw_curve, {})
 
-    assert filtered_curve.status.tag == Tag.WARN
+    assert filtered_curve.status.tag == Tag.FAIL
     assert filtered_curve.status.message == "Expired."
 
 
-def test_expired_expiry_filter_does_not_mark_unexpired_expiry_as_warn(
+def test_expired_expiry_filter_does_not_mark_unexpired_expiry_as_fail(
     jan_expiry: dt.datetime,
 ):
     raw_curve = RawIVCurve(jan_expiry, ok(), {})

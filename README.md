@@ -73,7 +73,7 @@ sample data and visualizes the output can be found at
 
 ## Running Tests
 
-After installing the package, the tests can be run fron the command line simply by
+After installing the package, the tests can be run from the command line simply by
 running
 
 ```shell

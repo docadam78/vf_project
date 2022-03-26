@@ -29,5 +29,5 @@ def test_volfitter_regression(
     volfitter_service.fit_full_surface()
 
     assert_surface_approx_equal(
-        regression_test_adapter.final_iv_surface, expected_output
+        regression_test_adapter.final_iv_surface, expected_output, abs=1e-6
     )

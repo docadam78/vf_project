@@ -5,6 +5,7 @@ The configuration defined in this module will be read from the process' environm
 variables at runtime. Default values are provided, but will be overriden by any
 of the relevant env vars if they are set.
 """
+from pathlib import Path
 
 import environ
 
@@ -37,7 +38,10 @@ class VolfitterConfig:
         converter=VolfitterMode,
         help="Mode in which to run the volfitter.",
     )
-    log_file = environ.var(default="logs/volfitter.log", help="The log file.")
+    log_file = environ.var(
+        default=f"{Path(__file__).parent}/../../logs/volfitter.log",
+        help="The log file.",
+    )
     fit_interval_s = environ.var(
         default=10, converter=int, help="Fit interval in seconds."
     )
@@ -49,7 +53,10 @@ class VolfitterConfig:
 
     @environ.config(prefix="SAMPLE_DATA_CONFIG")
     class SampleDataConfig:
-        input_data_path = environ.var(default="data/input", help="The input data path.")
+        input_data_path = environ.var(
+            default=f"{Path(__file__).parent}/../../data/input",
+            help="The input data path.",
+        )
         option_data_file_substring = environ.var(
             default="option_data",
             help="Option data will be loaded from all files in the input directory whose filenames contain this substring.",
@@ -59,7 +66,8 @@ class VolfitterConfig:
             help="Forward prices will be loaded from all files in the input directory whose filenames contain this substring.",
         )
         output_data_path = environ.var(
-            default="data/output", help="The output data path."
+            default=f"{Path(__file__).parent}/../../data/output",
+            help="The output data path.",
         )
         output_filename = environ.var(
             default="final_iv_surface.pickle", help="The output filename."

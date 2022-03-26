@@ -12,13 +12,13 @@ After cloning the repository, navigate to the root of the project directory and 
 the package by running
 
 ```shell
-pip install .
+> pip install .
 ```
 
 Then launch the command-line application by running
 
 ```shell
-volfitter
+> volfitter
 ```
 
 The process will run indefinitely until manually terminated, looping over all sample
@@ -39,7 +39,7 @@ details.) To change any parameter from its default value, simply set the environ
 variable before launching the application. For example,
 
 ```shell
-export VOLFITTER_FIT_INTERVAL_S=5
+> export VOLFITTER_FIT_INTERVAL_S=5
 ```
 
 The parameter can be reverted to its default value like `unset VOLFITTER_FIT_INTERVAL_S`.
@@ -73,9 +73,27 @@ sample data and visualizes the output can be found at
 
 ## Running Tests
 
-After installing the package, the tests can be run from the command line simply by
-running
+Install the package along with its test dependencies by running
 
 ```shell
-pytest
+> pip install ".[test]"
+```
+
+Then the tests can be run from the command line simply by running
+
+```shell
+> pytest
+```
+
+This will run all tests: unit, functional, and regression tests. Because the regression
+tests are much slower than the other tests, they can be run separately via
+
+```shell
+> pytest -m regression
+```
+
+Similarly, the unit and functional tests can be run without regression tests via
+
+```shell
+> pytest -m "not regression"
 ```

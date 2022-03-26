@@ -11,7 +11,7 @@ from volfitter.adapters.final_iv_consumer import AbstractFinalIVConsumer
 from volfitter.adapters.forward_curve_supplier import AbstractForwardCurveSupplier
 from volfitter.adapters.pricing_supplier import AbstractPricingSupplier
 from volfitter.adapters.raw_iv_supplier import AbstractRawIVSupplier
-from volfitter.composition_root import create_volfitter_service_from_adaptors
+from volfitter.composition_root import create_volfitter_service_from_adapters
 from volfitter.config import VolfitterConfig
 from volfitter.domain.datamodel import (
     RawIVSurface,
@@ -222,7 +222,7 @@ def volfitter_service(
     pricing_supplier: AbstractPricingSupplier,
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
-    return create_volfitter_service_from_adaptors(
+    return create_volfitter_service_from_adapters(
         volfitter_config,
         current_time_supplier,
         raw_iv_supplier,

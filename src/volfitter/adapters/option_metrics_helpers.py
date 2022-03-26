@@ -1,5 +1,5 @@
 """
-Module containing shared helpers for adaptors that translate OptionMetrics data.
+Module containing shared helpers for adapters that translate OptionMetrics data.
 """
 
 import datetime as dt

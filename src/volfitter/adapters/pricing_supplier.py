@@ -1,5 +1,5 @@
 """
-Module containing ports and adaptors for pricing suppliers.
+Module containing ports and adapters for pricing suppliers.
 
 Contains both the abstract interface and concrete implementation.
 """

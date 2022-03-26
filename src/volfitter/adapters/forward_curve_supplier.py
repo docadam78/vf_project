@@ -1,5 +1,5 @@
 """
-Module containing ports and adaptors for forward curve suppliers.
+Module containing ports and adapters for forward curve suppliers.
 
 Contains both the abstract interface and concrete implementation.
 """

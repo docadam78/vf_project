@@ -63,9 +63,9 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
     Creates a VolfitterService based on the provided VolfitterConfig.
 
     The VolfitterConfig includes a VolfitterMode, which determines which implementations
-    of the adaptors to the outside world are used. Currently the only supported mode is
+    of the adapters to the outside world are used. Currently the only supported mode is
     "SAMPLE_DATA." Supporting additional modes (e.g. "live" or "backtest") would simply
-    be a matter of writing the adaptors.
+    be a matter of writing the adapters.
 
     :param volfitter_config: The VolfitterConfig.
     :return: The fully constructed VolfitterService.
@@ -78,11 +78,11 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
             forward_curve_supplier,
             pricing_supplier,
             final_iv_consumer,
-        ) = _create_sample_data_adaptors(volfitter_config)
+        ) = _create_sample_data_adapters(volfitter_config)
     else:
         raise ValueError(f"{volfitter_config.volfitter_mode} not currently supported.")
 
-    return create_volfitter_service_from_adaptors(
+    return create_volfitter_service_from_adapters(
         volfitter_config,
         current_time_supplier,
         raw_iv_supplier,
@@ -92,7 +92,7 @@ def create_volfitter_service(volfitter_config: VolfitterConfig) -> VolfitterServ
     )
 
 
-def create_volfitter_service_from_adaptors(
+def create_volfitter_service_from_adapters(
     volfitter_config: VolfitterConfig,
     current_time_supplier: AbstractCurrentTimeSupplier,
     raw_iv_supplier: AbstractRawIVSupplier,
@@ -101,7 +101,7 @@ def create_volfitter_service_from_adaptors(
     final_iv_consumer: AbstractFinalIVConsumer,
 ) -> VolfitterService:
     """
-    Creates a VolfitterService from the supplied adaptors and config.
+    Creates a VolfitterService from the supplied adapters and config.
 
     :param volfitter_config: VolfitterConfig.
     :param current_time_supplier: AbstractCurrentTimeSupplier.
@@ -164,7 +164,7 @@ def _create_svi_fitter(svi_config: VolfitterConfig.SVIConfig) -> AbstractSurface
     return SVISurfaceFitter(calibrator)
 
 
-def _create_sample_data_adaptors(
+def _create_sample_data_adapters(
     volfitter_config: VolfitterConfig,
 ) -> Tuple[
     AbstractCurrentTimeSupplier,
@@ -174,7 +174,7 @@ def _create_sample_data_adaptors(
     AbstractFinalIVConsumer,
 ]:
     """
-    Creates sample data adaptors reading from and writing to disc.
+    Creates sample data adapters reading from and writing to disc.
     :param volfitter_config: VolfitterConfig.
     :return: Tuple[
         AbstractCurrentTimeSupplier,

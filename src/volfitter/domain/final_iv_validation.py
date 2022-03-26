@@ -189,12 +189,12 @@ class CrossedPnLFinalIVValidator(AbstractPerExpiryFinalIVValidator):
         ):
             _LOGGER.warning(
                 f"Expiry {final_iv_curve.expiry} breached Crossed PnL FAIL threshold: "
-                f"{total_crossed_pnl} > {self.final_iv_validation_config.crossed_pnl_fail_threshold}"
+                f"{total_crossed_pnl:.2f} > {self.final_iv_validation_config.crossed_pnl_fail_threshold}"
             )
             return FinalIVCurve(
                 final_iv_curve.expiry,
                 fail(
-                    f"Crossed PnL: {total_crossed_pnl} > {self.final_iv_validation_config.crossed_pnl_fail_threshold}"
+                    f"Crossed PnL: {total_crossed_pnl:.2f} > {self.final_iv_validation_config.crossed_pnl_fail_threshold}"
                 ),
                 final_iv_curve.points,
             )
@@ -204,12 +204,12 @@ class CrossedPnLFinalIVValidator(AbstractPerExpiryFinalIVValidator):
         ):
             _LOGGER.warning(
                 f"Expiry {final_iv_curve.expiry} breached Crossed PnL WARN threshold: "
-                f"{total_crossed_pnl} > {self.final_iv_validation_config.crossed_pnl_warn_threshold}"
+                f"{total_crossed_pnl:.2f} > {self.final_iv_validation_config.crossed_pnl_warn_threshold}"
             )
             return FinalIVCurve(
                 final_iv_curve.expiry,
                 warn(
-                    f"Crossed PnL: {total_crossed_pnl} > {self.final_iv_validation_config.crossed_pnl_warn_threshold}"
+                    f"Crossed PnL: {total_crossed_pnl:.2f} > {self.final_iv_validation_config.crossed_pnl_warn_threshold}"
                 ),
                 final_iv_curve.points,
             )

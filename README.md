@@ -50,7 +50,7 @@ with raw market bid and ask IVs.
 ![amzn_curve](img/amzn_curve.png)
 
 Both examples were produced by the notebook `notebooks/volfitter_visualization.ipynb`,
-running the volfitter application using default configuration on the sample data in `data/input/AMZN`.
+running the volfitter application using default configuration on the sample data in `data/input/AMZN/`.
 
 ## Configuration
 

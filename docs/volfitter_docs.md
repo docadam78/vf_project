@@ -228,7 +228,213 @@ some of the sample data adapters alongside the notebook-specific adapters).
 
 ## Logic and Functionality
 
-TODO
+In this section I provide a high-level overview of the currently available logic and
+functionality. As this document is intended to focus more on the design than the algorithm
+specifics, I stay at a high level in this section, mainly providing an overview of what
+functionality is available.
+
+### Overview
+
+The volfitter is triggered on a timer and performs a full surface fit on each run, which
+consists of the following steps:
+
+1. Pull in raw IVs
+2. Pull in the forward curve
+3. Pull in option pricing (e.g., Greeks, moneyness, etc.)
+4. Filter the raw IVs to remove "bad" input data
+5. Fit the surface model to the filtered raw IVs
+6. Validate the fitted surface
+7. Export the fitted surface
+
+The application is designed to be highly modular and configurable. The entire surface model
+could be swapped out, but for this project I have chosen to implement the Stochastic 
+Volatility Inspired (SVI) model of [Gatheral 2004](papers/gatheral2004.pdf). SVI is a five-parameter
+model of the implied variance curve at each expiry. In addition to being parsimonious and
+simple to calibrate, it has desirable theoretical properties: In particular, its asymptotics
+conform to the result of [Lee 2002](papers/lee2002.pdf) that variance must be linear in
+log-moneyness in the extreme wings.
+
+A large practical downside of SVI, however, is that it often cannot fit the market well.
+We see this quite extensively in our sample data: Five parameters simply are not enough
+to accurately model modern equity vol surfaces, especially in the shorter maturities (less
+than one week or so). Nevertheless, the model is instructive to consider for demonstrative
+purposes.
+
+I calibrate the model using an unconstrained version of the quasi-explicit calibration
+methodology of [Zeliade 2012](papers/zeliade2012.pdf), which will be discussed in more
+detail below. The calibrator could also easily be swapped out for a different implementation.
+
+### Configuration
+
+As discussed above, user configuration is done by setting environment variables. The following
+user parameters are currently available:
+
+```
+VOLFITTER_SYMBOL (Optional, Default=AMZN): The underlying symbol.
+VOLFITTER_VOLFITTER_MODE (Optional, Default=VolfitterMode.SAMPLE_DATA): Mode in which to run the volfitter.
+VOLFITTER_LOG_FILE (Optional, Default=logs/volfitter.log): The log file.
+VOLFITTER_FIT_INTERVAL_S (Optional, Default=10): Fit interval in seconds.
+VOLFITTER_SURFACE_MODEL (Optional, Default=SurfaceModel.SVI): The implied volatility surface model to fit to the market.
+VOLFITTER_SAMPLE_DATA_CONFIG_INPUT_DATA_PATH (Optional, Default=data/input): The input data path.
+VOLFITTER_SAMPLE_DATA_CONFIG_OPTION_DATA_FILE_SUBSTRING (Optional, Default=option_data): Option data will be loaded from all files in the input directory whose filenames contain this substring.
+VOLFITTER_SAMPLE_DATA_CONFIG_FORWARD_DATA_FILE_SUBSTRING (Optional, Default=forward_prices): Forward prices will be loaded from all files in the input directory whose filenames contain this substring.
+VOLFITTER_SAMPLE_DATA_CONFIG_OUTPUT_DATA_PATH (Optional, Default=data/output): The output data path.
+VOLFITTER_SAMPLE_DATA_CONFIG_OUTPUT_FILENAME (Optional, Default=final_iv_surface.pickle): The output filename.
+VOLFITTER_RAW_IV_FILTERING_CONFIG_MIN_VALID_STRIKES_FRACTION (Optional, Default=0.1): An expiry needs at least this fraction of its strikes to have valid markets in order to be fit.
+VOLFITTER_RAW_IV_FILTERING_CONFIG_MAX_LAST_TRADE_AGE_DAYS (Optional, Default=3): Filter out strikes which have not traded in more than this many business days.
+VOLFITTER_RAW_IV_FILTERING_CONFIG_WIDE_MARKET_OUTLIER_MAD_THRESHOLD (Optional, Default=15): Filter out markets which are wider than this many median absolute deviations (MADs) beyond the median width of the expiry.
+VOLFITTER_SVI_CONFIG_SVI_CALIBRATOR (Optional, Default=SVICalibrator.UNCONSTRAINED_QUASI_EXPLICIT): The calibrator to use for fitting the SVI model.
+VOLFITTER_FINAL_IV_VALIDATION_CONFIG_CROSSED_PNL_WARN_THRESHOLD (Optional, Default=20): An expiry will be marked as WARN if its total crossed PnL exceeds this threshold.
+VOLFITTER_FINAL_IV_VALIDATION_CONFIG_CROSSED_PNL_FAIL_THRESHOLD (Optional, Default=100): An expiry will be marked as FAIL if its total crossed PnL exceeds this threshold.
+```
+
+A few parameters allow the user to run the application in various "modes," but not all modes
+are currently supported and are exposed merely to demonstrate how the design could be extended.
+In particular:
+
+#### VolfitterMode
+
+`VOLFITTER_VOLFITTER_MODE` may either be set to `SAMPLE_DATA`, the default, `BACKTEST`, or
+`LIVE`. The two modes `BACKTEST` and `LIVE` will currently result in `ValueError`s if used;
+they are left in to demonstrate that to support these additional modes, one would merely
+have to supply new adapters for the five ports to replace the sample data adapters I have
+provided. This ease of reuse of the core application is a benefit of the hexagonal architecture.
+
+#### SurfaceModel
+
+`VOLFITTER_SURFACE_MODEL` currently supports either `SVI` (the default) or `MID_MARKET`.
+The mid-market "model" just returns the midpoint vol at each strike, with no actual calibration.
+
+#### SVICalibrator
+
+`VOLFITTER_SVI_CONFIG_SVI_CALIBRATOR` may be `UNCONSTRAINED_QUASI_EXPLICIT` (the default)
+or `VERTICAL_SPREAD_ARBITRAGE_FREE_QUASI_EXPLICIT` (not currently implemented and will result
+in a `ValueError`). The arbitrage-free calibrator refers to the calibrator of Zeliade 2012
+_with_ constraints. I have not implemented it, but it would be simple to do so and plug in.
+
+### Raw IV Filtering
+
+The first step of the volfitter is to filter out undesirable input data. "Filtering" means
+the removal of individual options from the input data, as well as the flagging of entire
+expiries that may be questionable. This is done by setting a `Status` tag on the curve
+which may be either `OK`, `WARN`, or `FAIL`. Any input curves that are not `OK` will not
+be fit by the fitter, and the `WARN` or `FAIL` status will be propagated to the final surface
+consumer along with an empty curve for that expiry.
+
+I have implemented the following filters:
+
+#### ExpiredExpiryFilter
+
+A safety check to remove expiries that have already expired but which are still included
+in the input data. In our sample data, this happens on the day of expiry because the market
+snapshot is taken right at the close. An expired expiry is set to `FAIL`.
+
+#### InTheMoneyFilter
+
+Remove in-the-money (ITM) options so that we fit only out-of-the-moneys (OTMs). The OTMs
+are typically more tightly quoted and contain more useful information. More sophisticated
+schemes are possible, such as taken a blend of near-ITMs and near-OTMs around at-the-money (ATM),
+but here I favor the simplest approach.
+
+#### NonTwoSidedMarketFilter
+
+Remove any option that is either one-sided or completely empty.
+
+More sophisticated approaches are possible, which would still consider the one side that _is_
+available rather than discarding the market entirely, but here I again favor the simplest
+approach.
+
+#### StaleLastTradeDateFilter
+
+Remove options whose last trade date is too far in the past, or which have never
+traded. These tend to be the less-liquid options in the wings. Configured via the
+`VOLFITTER_RAW_IV_FILTERING_CONFIG_MAX_LAST_TRADE_AGE_DAYS` parameter.
+
+#### WideMarketFilter
+
+Remove markets that are too wide. This check uses a per-expiry outlier detection
+scheme based on the median and median absolute deviation (MAD) of the market widths
+in that expiry. The median and MAD are measures of location and dispersion that are
+statistically robust to outliers, so they are preferable to the mean and standard deviation
+in outlier-detection applications.
+
+We remove markets which are wider than a configurable number of MADs beyond the median
+width, parameterized via `VOLFITTER_RAW_IV_FILTERING_CONFIG_WIDE_MARKET_OUTLIER_MAD_THRESHOLD`.
+
+A possible extension would be to implement a global filter (using the median and MAD across
+all expiries) in addition to the per-expiry filter.
+
+#### InsufficientValidStrikesFilter
+
+Finally, if an expiry has too few remaining strikes, either because it did not have enough
+strikes listed in the first place or because we removed too many during the upstream filters,
+we will mark the expiry as `FAIL` and not fit it.
+
+This is controlled via the `VOLFITTER_RAW_IV_FILTERING_CONFIG_MIN_VALID_STRIKES_FRACTION`
+parameter, which specifies the required strikes as a fraction of the originally listed strikes.
+
+We also require there to be at least three strikes, because the SVI model (and, I suspect,
+many models) cannot be fit to fewer than three points.
+
+### Surface Fitters
+
+I refer to the following excerpt from Zeliade 2012:
+
+![svi](../img/svi.png)
+
+In the volfitter codebase, I give the five model parameters more descriptive names:
+
+- `Level`, or `a`, gives the overall level of variance
+- `Angle`, or `b`, gives the angle between the left and right asymptotes
+- `Smoothness`, or `\sigma`, determines how smooth the vertex is
+- `Tilt`, or `\rho`, determines the orientation of the graph
+- Changing `center`, or `m`, translates the graph
+
+I refer to [Gatheral 2004](papers/gatheral2004.pdf) and [Zeliade 2012](papers/zeliade2012.pdf)
+for more details on the model and its calibration,
+but here I will briefly describe the idea. Performing a change of variables, one
+finds that given fixed values of `smoothness` and `center`, the optimal values of `level`,
+`angle`, and `tilt` can be found explicitly by solving a linear system of equations.
+
+(Zeliade 2012 include no-arbitrage constraints on this inner problem, which turns it into
+a quadratic program with linear constraints, but I omit these because the constraints drastically
+degrade the fit quality.)
+
+Thus, we perform a two-stage calibration: An inner minimization is performed explicitly,
+and the outer minimization just needs to solve for `smoothness` and `center`. The outer
+minimization can use any reasonable general-purpose optimizer: I use the Nelder-Mead simplex algorithm,
+which is a decent default choice and is also what Zeliade 2012 use.
+
+### Final IV Validation
+
+Before exporting the fitted IV surface to consumers, we must validate it. "Validation"
+simply means setting the `Status` tag on the fitted smiles to `WARN` or `FAIL` if certain
+checks are breached. The downstream consumers can then decide how to handle questionable
+results.
+
+Currently I have implemented just a single validation check, but as discussed in the "Architecture
+and Design" section, it would be easy to add more.
+
+#### CrossedPnLValidator
+
+This validator computes the amount each fitted curve is through the market and computes
+an aggregate number, in dollar terms, expiry. This number, the expiry's "crossed PnL",
+is compared to two user thresholds:
+
+`VOLFITTER_FINAL_IV_VALIDATION_CONFIG_CROSSED_PNL_WARN_THRESHOLD` and
+`VOLFITTER_FINAL_IV_VALIDATION_CONFIG_CROSSED_PNL_FAIL_THRESHOLD`.
+
+If the `FAIL` threshold is breached, expiry is marked as `FAIL`. If not, but if  the `WARN`
+threshold is breached, the expiry is marked as `WARN`.
+
+We compute the crossed PnL per option: We first look at how far the fitted vol at that strike
+is through the bid or ask, and multiply this amount by vega to get a price-space number. These
+per-option crossed PnLs are then summed per expiry.
+
+It is important that the crossed PnL check is done for _all_ listed options in the expiry,
+including ones that were filtered out and not included in the calibration! Even though a
+market was not "good" enough for us to want to calibrate to it, it's still tradable and
+would cost real money if we were through it.
 
 ## Discussion of Possible Extensions
 

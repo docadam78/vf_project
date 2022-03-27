@@ -1,0 +1,12 @@
+@startuml
+
+object volfitter
+
+class apschedulers.BlockingScheduler
+class service_layer.VolfitterService
+
+volfitter "creates" ---> apschedulers.BlockingScheduler
+volfitter "creates" --> service_layer.VolfitterService
+service_layer.VolfitterService <- "triggers\n\n" apschedulers.BlockingScheduler
+
+@enduml

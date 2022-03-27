@@ -1,0 +1,22 @@
+@startuml
+
+class VolfitterService
+abstract class adapters.AbstractFinalIVConsumer
+abstract class adapters.AbstractPricingSupplier
+abstract class adapters.AbstractForwardCurveSupplier
+abstract class adapters.AbstractRawIVSupplier
+abstract class adapters.AbstractCurrentTimeSupplier
+abstract class domain.AbstractFinalIVValidator
+abstract class domain.AbstractSurfaceFitter
+abstract class domain.AbstractRawIVFilter
+
+VolfitterService o-- adapters.AbstractFinalIVConsumer
+VolfitterService o-- adapters.AbstractPricingSupplier
+VolfitterService o-- adapters.AbstractForwardCurveSupplier
+VolfitterService o-- adapters.AbstractRawIVSupplier
+VolfitterService o-- adapters.AbstractCurrentTimeSupplier
+VolfitterService o-- domain.AbstractFinalIVValidator
+VolfitterService o-- domain.AbstractSurfaceFitter
+VolfitterService o-- domain.AbstractRawIVFilter
+
+@enduml

@@ -27,6 +27,15 @@ to `logs/volfitter.log`. Tail this file to observe the progress of the fitter.
 
 The fitted surface is written to a pickle file in `data/output/` by default.
 
+## Documentation
+
+More detailed documentation of the volfitter is available at [`docs/volfitter_docs.md`](docs/volfitter_docs.md).
+In particular, the documentation discusses
+
+1. the architecture and design of the system;
+2. the logic and available functionality;
+3. and possible extensions and how they would fit into the design.
+
 ## Examples
 
 ![amzn_surface](img/amzn_surface.png)

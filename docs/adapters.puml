@@ -1,0 +1,47 @@
+@startuml
+
+object caching_option_dataframe_supplier
+object caching_forward_dataframe_supplier
+
+abstract class AbstractCurrentTimeSupplier
+class CyclingCurrentTimeSupplier
+
+AbstractCurrentTimeSupplier <|-- CyclingCurrentTimeSupplier
+CyclingCurrentTimeSupplier "is created from" <-- caching_option_dataframe_supplier
+
+abstract class AbstractRawIVSupplier
+class OptionMetricsRawIVSupplier
+
+AbstractRawIVSupplier <|-- OptionMetricsRawIVSupplier
+OptionMetricsRawIVSupplier o-- caching_option_dataframe_supplier
+
+abstract class AbstractForwardCurveSupplier
+class OptionMetricsForwardCurveSupplier
+
+AbstractForwardCurveSupplier <|-- OptionMetricsForwardCurveSupplier
+OptionMetricsForwardCurveSupplier o-- caching_forward_dataframe_supplier
+
+abstract class AbstractPricingSupplier
+class OptionMetricsPricingSupplier
+
+AbstractPricingSupplier <|-- OptionMetricsPricingSupplier
+OptionMetricsPricingSupplier o-- caching_option_dataframe_supplier
+
+abstract class AbstractDataFrameSupplier
+abstract class AbstractDataFrameLoader
+class ConcatenatingDataFrameLoader
+class CachingDataFrameSupplier
+
+AbstractDataFrameLoader <|-- ConcatenatingDataFrameLoader
+AbstractDataFrameSupplier <|-- CachingDataFrameSupplier
+CachingDataFrameSupplier o-- AbstractDataFrameLoader
+
+caching_forward_dataframe_supplier "is instance of" <-- AbstractDataFrameSupplier
+caching_option_dataframe_supplier "is instance of" <-- AbstractDataFrameSupplier
+
+abstract class AbstractFinalIVConsumer
+class PickleFinalIVConsumer
+
+AbstractFinalIVConsumer <|-- PickleFinalIVConsumer
+
+@enduml

@@ -121,13 +121,13 @@ necessarily commonplace.)
 
 The service layer, together with the domain model, makes up the application core in our
 hexagonal architecture. Conceptually, the service layer defines the use cases of the system:
-It is "orchestation code" that uses the functionality provided by the domain model to perform
-a particular task, while getting input from and sending output to the ports and adapters that
+It is "orchestration code" that uses the functionality provided by the domain model to perform
+particular tasks, while getting input from and sending output to the ports and adapters that
 surround the application core.
 
-In the volfitter, there is currently only a single use case, and thus only one method on the
+In the volfitter, I have implemented only a single use case, and thus there is currently only one method on the
 service layer: `fit_full_surface`. Adding additional use cases or paths through the system,
-such as a path to fit single market events rather than fitting the full surface, could be
+such as a path to fit single market events rather than fitting the full surface, would be
 achieved by adding new methods to the service layer that use the domain model in different ways.
 This will be explored further in the "Discussion of Possible Extensions" section of this
 document.
@@ -149,8 +149,10 @@ and functionality of the domain layer should be intelligible to business domain
 experts&mdash;in our case, traders and quants.
 
 It contains both data, which I
-put in the `datamodel` package, and behavior, which lives in the other sub-packages within
-the domain layer.
+put in `datamodel.py`, and behavior, which lives in the other sub-packages within
+the domain layer. In particular, `datamodel.py` is part of the API over which the application
+core communicates with the outside world. The adapters, discussed below, translate their
+specific external resources to and from this domain API.
 
 I will discuss the available functionality in the "Logic and Functionality" section, so
 here I focus on the class hierarchy and dependency structure.
@@ -161,7 +163,7 @@ filters are `AbstractPerExpiryRawIVFilter`s, they do not need to be: We could ad
 that operates across all expiries, for example one that computes a wide market threshold
 based on a global rather than per-expiry median.
 
-The `CompositeRawIVFilter` is always the filter implementation which which the `VolfitterService`
+The `CompositeRawIVFilter` is always the filter implementation with which the `VolfitterService`
 is constructed: It contains an arbitrary number of other filters and applies them each in
 turn, making the addition of new filters or the use of a subset of them extremely easy.
 
@@ -216,6 +218,13 @@ the ports are the top row of abstract classes, and the adapters are the implemen
 beneath them.
 
 ![adapters_uml](../img/adapters_uml.png)
+
+A final comment is that the ports and adapters pattern makes it quite easy to test the
+application or to run it in a notebook. In particular, the regression and functional tests
+provide test adapters implementing the five ports: In terms of the above UML diagram, the
+top layer of ports remains the same and everything below it is replaced with test adapters.
+A similar pattern is used in the visualization notebook (although there I continue to use
+some of the sample data adapters alongside the notebook-specific adapters).
 
 ## Logic and Functionality
 

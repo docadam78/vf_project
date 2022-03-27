@@ -38,7 +38,19 @@ In particular, the documentation discusses
 
 ## Examples
 
+The below plot shows the full fitted AMZN surface on 2020-02-03: The plot on the left shows
+the raw mid-market volatility surface, and the plot on the right shows the fitted SVI volatility
+surface.
+
 ![amzn_surface](img/amzn_surface.png)
+
+Below is shown the fitted SVI smile for the AMZN 2020-02-21 expiry on 2020-01-16, together
+with raw market bid and ask IVs.
+
+![amzn_curve](img/amzn_curve.png)
+
+Both examples were produced by the notebook `notebooks/volfitter_visualization.ipynb`,
+running the volfitter application using default configuration on the sample data in `data/input/AMZN`.
 
 ## Configuration
 

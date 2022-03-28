@@ -333,7 +333,7 @@ snapshot is taken right at the close. An expired expiry is set to `FAIL`.
 
 Remove in-the-money (ITM) options so that we fit only out-of-the-moneys (OTMs). The OTMs
 are typically more tightly quoted and contain more useful information. More sophisticated
-schemes are possible, such as taken a blend of near-ITMs and near-OTMs around at-the-money (ATM),
+schemes are possible, such as taking a blend of near-ITMs and near-OTMs around at-the-money (ATM),
 but here I favor the simplest approach.
 
 #### NonTwoSidedMarketFilter
@@ -418,17 +418,17 @@ and Design" section, it would be easy to add more.
 #### CrossedPnLValidator
 
 This validator computes the amount each fitted curve is through the market and computes
-an aggregate number, in dollar terms, expiry. This number, the expiry's "crossed PnL",
+an aggregate number, in dollar terms, per expiry. This number, the expiry's "crossed PnL",
 is compared to two user thresholds:
 
 `VOLFITTER_FINAL_IV_VALIDATION_CONFIG_CROSSED_PNL_WARN_THRESHOLD` and
 `VOLFITTER_FINAL_IV_VALIDATION_CONFIG_CROSSED_PNL_FAIL_THRESHOLD`.
 
-If the `FAIL` threshold is breached, expiry is marked as `FAIL`. If not, but if  the `WARN`
+If the `FAIL` threshold is breached, the expiry is marked as `FAIL`. If not, but if  the `WARN`
 threshold is breached, the expiry is marked as `WARN`.
 
-We compute the crossed PnL per option: We first look at how far the fitted vol at that strike
-is through the bid or ask, and multiply this amount by vega to get a price-space number. These
+We first compute the crossed PnL per option by looking at how far the fitted vol at that strike
+is through the bid or ask and multiplying this amount by vega to get a price-space number. These
 per-option crossed PnLs are then summed per expiry.
 
 It is important that the crossed PnL check is done for _all_ listed options in the expiry,
@@ -457,7 +457,7 @@ spot prices to adjust any relevant slower-updating pricing values using a Taylor
 in the spot price.
 
 Certain of the raw IV filters could also be skipped or simplified: For example, currently
-te slowest part of the entire volfitter is actually the "stale last trade date" check. This
+the slowest part of the entire volfitter is actually the "stale last trade date" check. This
 would be easy low-hanging fruit to speed up, but moreover, an intraday simulation would not
 need to recompute this entire check every time.
 
@@ -468,18 +468,18 @@ then we could cache the results of the filtering and reuse them.
 ### Addition of New Surface Models
 
 As discussed above, the design of the system makes it simple to plug in new surface model
-implementations. Another key design choice that enabled this is to choice to represent the final
+implementations. Another key design choice that enabled this is the choice to represent the final
 exported vol surface as a collection of vols per strike, rather than exporting the model parameters
 themselves. For example, we could have chosen to export the five SVI parameters, and this
 would have had the benefit of allowing downstream consumers to perfectly calculate the model
 vol at _any_ moneyness point.
 
 But, the big downside is that it would leak the specifics of the model out into the wider
-ecosystem! Instead, by exporting the model vols at each strike, we are not coupling
+ecosystem! Instead, by exporting the model vols themselves at each strike as we do now, we are not coupling
 ourselves to any model.
 
 The model-free choice comes with its own downside, which is that it is much harder to get
-the vol at arbitrary strikes or moneyness points. This could be mitigated by adding exporting
+the vol at arbitrary strikes or moneyness points. This could be mitigated by exporting
 the slope (`dVol/dStrike`) and curvature (`d2Vol/dStrike2`) along with the vol at every strike.
 Then, consumers could do cubic spline interpolation, which still avoids coupling to a specific
 model (although cubic spline interpolation can produce undesirable oscillations).

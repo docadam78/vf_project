@@ -41,7 +41,7 @@ The most relevant parts of the project strucure are the following six directorie
 ```
 
 - `data` contains the sample input data on which the application runs. I sourced data from the OptionMetrics vendor, accessed via Wharton Research Data Services (WRDS). The repository includes daily data for AMZN for calendar year 2020. (I selected AMZN because it does not pay dividends, in an attempt to limit difficulties arising from the American-ness of equity options.)
-- `docs` contains a details writeup of the project.
+- `docs` contains a detailed writeup of the project.
 - `notebooks` contains a sample Jupyter notebook for visualizing the volfitter's output.
 - `papers` contains relevant papers describing the model and methodologies I implemented, as well as the OptionMetrics reference manual for the vended data format.
 - `src` contains the code itself.

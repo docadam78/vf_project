@@ -110,7 +110,7 @@ Then the tests can be run from the command line simply by running
 > pytest
 ```
 
-This will run all tests: unit, functional, and regression tests. Because the regression
+This will run all tests: Unit, functional, and regression tests. Because the regression
 tests are much slower than the other tests, they can be run separately via
 
 ```shell

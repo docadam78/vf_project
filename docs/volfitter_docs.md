@@ -438,4 +438,88 @@ would cost real money if we were through it.
 
 ## Discussion of Possible Extensions
 
-TODO
+In this section I briefly touch on some possible extensions and how they could be
+incorporated into the design.
+
+### Running the Fitter in Different Modes
+
+This extension was mentioned above: To run the fitter live or in backtest mode, one would
+simply have to provide new adapters for the input/output ports. There is an additional consideration
+for a simulation or backtest mode, however, which is that we would want it to run as fast
+as possible and so it should avoid recomputing any values that are not strictly necessary.
+
+In the volfitter as it stands now (thinking about a production setup, rather than my sample
+data), the raw input IVs would update on a higher frequency than the forward curves and
+pricing values, so any downstream computations based on the forwards or pricing could be cached
+and updated less often. The spot price _would_ update on a high frequency just like the option
+markets, so while I don't use it in my current implementation, we could use high-frequency
+spot prices to adjust any relevant slower-updating pricing values using a Taylor expansion
+in the spot price.
+
+Certain of the raw IV filters could also be skipped or simplified: For example, currently
+te slowest part of the entire volfitter is actually the "stale last trade date" check. This
+would be easy low-hanging fruit to speed up, but moreover, an intraday simulation would not
+need to recompute this entire check every time.
+
+Additionally, if the user is interested only in resimming the fitter with different parameters
+for the surface model while leaving the filtering parameters unchanged,
+then we could cache the results of the filtering and reuse them.
+
+### Addition of New Surface Models
+
+As discussed above, the design of the system makes it simple to plug in new surface model
+implementations. Another key design choice that enabled this is to choice to represent the final
+exported vol surface as a collection of vols per strike, rather than exporting the model parameters
+themselves. For example, we could have chosen to export the five SVI parameters, and this
+would have had the benefit of allowing downstream consumers to perfectly calculate the model
+vol at _any_ moneyness point.
+
+But, the big downside is that it would leak the specifics of the model out into the wider
+ecosystem! Instead, by exporting the model vols at each strike, we are not coupling
+ourselves to any model.
+
+The model-free choice comes with its own downside, which is that it is much harder to get
+the vol at arbitrary strikes or moneyness points. This could be mitigated by adding exporting
+the slope (`dVol/dStrike`) and curvature (`d2Vol/dStrike2`) along with the vol at every strike.
+Then, consumers could do cubic spline interpolation, which still avoids coupling to a specific
+model (although cubic spline interpolation can produce undesirable oscillations).
+
+
+### Addition of New Calibrators
+
+As discussed above, the design of the system also makes it easy to plug in different calibrators.
+In particular, one could easily guarantee the absence of vertical spread abritrage by implementing
+the constrained calibrator of Zeliade 2012. This is easy to implement using the `cvxpy` convex
+optimization library.
+
+### Fitting Single Market Events
+
+Suppose we wanted to add a "fast path" to the system to quickly incorporate single market
+events (such as large trades) without performing a full fit. This could be accomplished by
+adding a new method to `VolfitterService` beside `fit_full_surface`. The new method would
+represent the second use case orchestrated by our service layer!
+
+The new method would use the domain model functionality in slightly different ways from `fit_full_surface`. For
+example, it would short-circuit most, if not all, of the raw IV filtering. (We would likely have
+specific safety checks for the fast path.) Rather than calling the full surface fitter, it would
+retrieve the last-fit surface from a cache and call logic to apply the impact of the trade
+on top.
+
+This description of the fast-path functionality is not meant to be rigorous, but merely to
+show how it could conveniently be architected into the system by leveraging the distinction between
+the service layer and the domain model.
+
+### Incorporating Vol Alphas
+
+Similarly, incorporating vol alphas or opinionated vol leans into the system could be done
+by leveraging the service layer/domain model distinction. In our current `fit_full_surface`
+workflow, we could imagine a new stage being added between the current surface fit and the
+final validation. This stage would apply vol alphas on top of the fitted surface. The alphas
+themselves could arrive in the system via a new port and adapter.
+
+Another consideration that arises here is that it may be desirable to export both the "mid-market"
+fitted surface without alphas and the opinionated/alpha surface. For example, we may want to use
+different surfaces for market-making and risk-taking strategies; or we may want surfaces with
+alphas of different time horizons; or our market risk systems may want an unbiased vol surface
+even if our trading systems use the biased surface (unless the risk systems have their own
+entirely separate vol surface to reduce model risk).

@@ -8,13 +8,20 @@ extensions and how they would fit into the design.
 ## Architecture and Design
 
 This section describes the architecture and design of the volfitter application, discussing
-approaches and design choices that were taken along the way.
+the approach that was taken and some design choices made along the way. Additional discussion
+of design choices and their consequences can be found in the "Discussion of Possible Extensions"
+section.
+
+### Overview
 
 At a high level, the design of the system follows the 
 [hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)), 
 or ports and adapters, pattern. This pattern describes a design with a central application
 core which is isolated from the environment in which it runs; the application core communicates
 with the outside world via ports and adapters, which will be discussed in more detail below.
+
+A main benefit of the hexagonal architecture is that it renders the system highly modular, making
+it easy to run the core logic of the application in different setups and environments.
 
 The application core consists of a [domain layer](https://en.wikipedia.org/wiki/Domain_model) 
 containing the business logic (everything to do with options and vol fitting) and a service 
